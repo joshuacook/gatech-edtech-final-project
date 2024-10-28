@@ -1,0 +1,9 @@
+# docker/requirements.txt
+
+anthropic[bedrock]
+fastapi
+instructor
+networkx
+plotly
+pymongo
+streamlit
