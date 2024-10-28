@@ -1,0 +1,14 @@
+# .gitignore
+
+.env
+.local
+.npm
+.jupyter
+.ipy*
+.DS_Store
+.cache
+.venv
+.bash_history
+*.wt
+data
+__pycache__
