@@ -2,6 +2,7 @@
 
 import fastapi
 from routers.chat import chat_router
+from routers.concepts import concepts_router
 
 app = fastapi.FastAPI()
 
@@ -10,3 +11,4 @@ def read_root():
     return {"message": "Hello World"}
 
 app.include_router(chat_router, prefix="/api")
+app.include_router(concepts_router, prefix="/api")

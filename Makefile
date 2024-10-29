@@ -25,6 +25,9 @@ build:
 logs:
 	docker-compose logs -f api frontend db
 
+logs-frontend:
+	docker-compose logs -f frontend api
+
 ps:
 	docker-compose ps
 
