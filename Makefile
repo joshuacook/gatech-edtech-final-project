@@ -12,6 +12,10 @@ up:
 down:
 	docker-compose down
 
+reset:
+	docker-compose down --volumes
+	rm -rf filestore
+
 build:
 	docker-compose build --no-cache
 

@@ -22,9 +22,10 @@ def save_file(uploaded_file, file_store_path):
     
     file_extension = os.path.splitext(uploaded_file.name)[1]
     filename = f"{file_hash}{file_extension}"
-    filepath = os.path.join(file_store_path, filename)
     
-    os.makedirs(file_store_path, exist_ok=True)
+    raw_dir = os.path.join(file_store_path, 'raw')
+    os.makedirs(raw_dir, exist_ok=True)
+    filepath = os.path.join(raw_dir, filename)
     
     with open(filepath, 'wb') as f:
         f.write(uploaded_file.getvalue())
@@ -42,7 +43,7 @@ def main():
     st.title("📝 File Upload")
     
     db = init_mongo()
-    redis_conn = init_redis()
+    redis_conn = Redis.from_url(os.getenv('REDIS_URL', 'redis://redis:6379'))
     q = Queue(connection=redis_conn)
     
     raw_assets = db['raw_assets']
@@ -82,17 +83,13 @@ def main():
                     
                     result = raw_assets.insert_one(asset_record)
                     
-                    # Queue the touch file job
-                    job = q.enqueue('jobs.touch_file', file_details['file_hash'])
+                    job = q.enqueue('jobs.process_with_marker', file_details['file_hash'])
                     
                     st.success(f"File uploaded successfully! Asset ID: {result.inserted_id}")
-                    st.info(f"Touch file job queued (Job ID: {job.id})")
+                    st.info(f"Marker processing job queued (Job ID: {job.id})")
                     
                 except Exception as e:
                     st.error(f"An error occurred: {str(e)}")
-
-    st.subheader("Uploaded Files")
-    # Rest of the file listing code remains the same...
 
 if __name__ == "__main__":
     main()

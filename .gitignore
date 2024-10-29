@@ -12,3 +12,5 @@
 *.wt
 data
 __pycache__
+filestore
+mongo_data

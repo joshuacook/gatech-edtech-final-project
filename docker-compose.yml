@@ -50,7 +50,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - ./data:/data/db
+      - mongo_data:/data/db
     environment:
       - MONGO_INITDB_DATABASE=chelle
       
@@ -75,3 +75,5 @@ services:
       - redis
       - db
 
+volumes:
+  mongo_data:
