@@ -20,6 +20,7 @@ reset:
 	docker-compose up -d
 
 build:
+	cd frontend && npm install && npm run build
 	docker-compose build --no-cache
 
 logs:
