@@ -1,7 +1,6 @@
-# Makefile
-
 DIRS ?= api docker frontend prompts
-IGNORE ?= .git,node_modules,.DS_Store,__pycache__, .pyc, .pyo
+FILES ?= docker-compose.yml
+IGNORE ?= .git,node_modules,.DS_Store,__pycache__,.pyc,.pyo
 IGNORE_ARGS := $(foreach pattern,$(subst $(comma),$(space),$(IGNORE)),-not -path "*/$(pattern)/*")
 comma := ,
 space := $(empty) $(empty)
@@ -24,9 +23,21 @@ ps:
 
 cat:
 	@> $(TMP_FILE)
+	@# Process individual files first
+	@for file in $(FILES); do \
+		if [ -f "$$file" ]; then \
+			echo -e "\n\n# $$file\n\n" >> $(TMP_FILE); \
+			cat "$$file" >> $(TMP_FILE); \
+			echo -e "\n\n" >> $(TMP_FILE); \
+		else \
+			echo "Warning: File $$file does not exist" >&2; \
+		fi \
+	done
+	@# Process directories recursively
 	@for dir in $(DIRS); do \
 		if [ -d "$$dir" ]; then \
-			find "$$dir" -type f $(IGNORE_ARGS) -print0 | while IFS= read -r -d '' file; do \
+			find "$$dir" -type f -print0 $(IGNORE_ARGS) | while IFS= read -r -d '' file; do \
+				echo -e "\n\n# $$file\n\n" >> $(TMP_FILE); \
 				cat "$$file" >> $(TMP_FILE); \
 				echo -e "\n\n" >> $(TMP_FILE); \
 			done; \

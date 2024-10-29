@@ -20,9 +20,14 @@ services:
     working_dir: /app
     volumes:
       - ./api:/app
+      - ./filestore:/app/filestore
+    environment:
+      - MONGODB_URI=mongodb://db:27017/
     env_file:
       - .env
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - db
   frontend:
     build: ./docker
     ports:
@@ -30,9 +35,15 @@ services:
     working_dir: /app
     volumes:
       - ./frontend:/app
+      - ./filestore:/app/filestore 
+    environment:
+      - MONGODB_URI=mongodb://db:27017/
     env_file:
       - .env
     command: streamlit run Home.py --server.port 80 --server.address 0.0.0.0
+    depends_on:
+      - db
+      - api
   db:
     image: mongo
     container_name: db
@@ -40,3 +51,27 @@ services:
       - "27017:27017"
     volumes:
       - ./data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=chelle
+      
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+  
+  worker:
+    build: ./docker
+    working_dir: /app
+    volumes:
+      - ./api:/app
+      - ./filestore:/app/filestore
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - MONGODB_URI=mongodb://db:27017/
+    env_file:
+      - .env
+    command: rq worker --url redis://redis:6379
+    depends_on:
+      - redis
+      - db
+

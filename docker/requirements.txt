@@ -6,4 +6,9 @@ instructor
 networkx
 plotly
 pymongo
+python-multipart
+redis
+rq
 streamlit
+uvicorn
+

@@ -7,7 +7,7 @@ from typing import Optional, List, Dict
 from pydantic import BaseModel
 from anthropic import AnthropicBedrock
 chat_router = APIRouter()
-client = AnthropicBedrock(region_name="us-east-1")
+client = AnthropicBedrock(aws_region="us-east-1")
 MODEL_ID = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 
 class ChatRequest(BaseModel):
