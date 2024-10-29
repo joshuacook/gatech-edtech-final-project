@@ -1,9 +1,6 @@
-// app/concepts/concept-view.tsx
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Edit, Calendar, Star } from 'lucide-react'
-import ConceptForm from './concept-form'
+import { Calendar, Star } from 'lucide-react'
 
 interface ConceptViewProps {
   concept: {
@@ -14,41 +11,14 @@ interface ConceptViewProps {
     understanding_level: string
     created_at: string
   }
-  isEditing: boolean
-  onEditClick: () => void
-  onUpdate: () => void
 }
 
-export default function ConceptView({ 
-  concept, 
-  isEditing, 
-  onEditClick,
-  onUpdate 
-}: ConceptViewProps) {
-  if (isEditing) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Edit Concept: {concept.name}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ConceptForm 
-            concept={concept}
-            onSuccess={onUpdate}
-          />
-        </CardContent>
-      </Card>
-    )
-  }
-
+export default function ConceptView({ concept }: ConceptViewProps) {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardHeader>
           <CardTitle>{concept.name}</CardTitle>
-          <Button variant="ghost" size="icon" onClick={onEditClick}>
-            <Edit className="h-4 w-4" />
-          </Button>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
