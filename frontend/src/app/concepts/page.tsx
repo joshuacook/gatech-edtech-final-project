@@ -53,31 +53,32 @@ export default function ConceptsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <Book className="w-8 h-8" />
-          <h1 className="text-3xl font-bold">Concepts Management</h1>
+    <div className="p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <Book className="w-8 h-8" />
+            <h1 className="text-3xl font-bold">Concepts Management</h1>
+          </div>
+          
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Create Concept
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="w-[600px]">
+              <SheetHeader>
+                <SheetTitle>Create New Concept</SheetTitle>
+              </SheetHeader>
+              <ConceptForm onSuccess={handleConceptCreated} />
+            </SheetContent>
+          </Sheet>
         </div>
-        
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Create Concept
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="w-[600px]">
-            <SheetHeader>
-              <SheetTitle>Create New Concept</SheetTitle>
-            </SheetHeader>
-            <ConceptForm onSuccess={handleConceptCreated} />
-          </SheetContent>
-        </Sheet>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="col-span-1 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="col-span-1 space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Concepts Overview</CardTitle>
@@ -142,8 +143,9 @@ export default function ConceptsPage() {
               </CardContent>
             </Card>
           )}
+          </div>
+        </div>
         </div>
       </div>
-    </div>
   )
 }
