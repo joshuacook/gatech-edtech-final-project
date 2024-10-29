@@ -1,4 +1,4 @@
-# docker/requirements.txt
+# docker/backend/requirements.txt
 
 anthropic[bedrock]
 fastapi

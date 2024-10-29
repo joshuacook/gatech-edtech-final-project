@@ -2,7 +2,7 @@
 
 services:
   jupyter:
-    build: ./docker
+    build: ./docker/backend
     container_name: jupyter
     ports:
       - "8888:8888"
@@ -13,8 +13,9 @@ services:
     env_file:
       - .env
     command: jupyter lab --ip 0.0.0.0 --port 8888 --NotebookApp.token='' --NotebookApp.password=''
+
   api:
-    build: ./docker
+    build: ./docker/backend
     ports:
       - "8000:8000"
     working_dir: /app
@@ -28,22 +29,27 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       - db
+
   frontend:
-    build: ./docker
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend/Dockerfile
+      target: builder
     ports:
-      - "80:80"
-    working_dir: /app
+      - "3000:3000"
     volumes:
       - ./frontend:/app
-      - ./filestore:/app/filestore 
+      - /app/node_modules
+      - /app/.next
     environment:
-      - MONGODB_URI=mongodb://db:27017/
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://api:8000
     env_file:
       - .env
-    command: streamlit run Home.py --server.port 80 --server.address 0.0.0.0
     depends_on:
-      - db
       - api
+    command: npm run dev
+
   db:
     image: mongo
     container_name: db
@@ -60,7 +66,7 @@ services:
       - "6379:6379"
   
   worker:
-    build: ./docker
+    build: ./docker/backend
     working_dir: /app
     volumes:
       - ./api:/app

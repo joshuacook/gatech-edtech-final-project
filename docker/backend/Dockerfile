@@ -1,4 +1,4 @@
-# docker/Dockerfile
+# docker/backend/Dockerfile
 
 FROM jupyter/scipy-notebook:latest
 
