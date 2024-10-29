@@ -24,7 +24,6 @@ def view_file_details(asset):
     """Display detailed information about a file"""
     st.subheader(f"📄 {asset['original_name']}")
     
-    # Basic Info
     col1, col2, col3 = st.columns(3)
     with col1:
         st.metric("File Size", format_size(asset['file_size']))
@@ -34,7 +33,6 @@ def view_file_details(asset):
         status_color = "🟢" if asset.get('processed', False) else "🟡"
         st.metric("Status", f"{status_color} {'Processed' if asset.get('processed', False) else 'Processing'}")
     
-    # File Details Tab
     with st.expander("File Details", expanded=True):
         col1, col2 = st.columns(2)
         with col1:
@@ -47,10 +45,8 @@ def view_file_details(asset):
             if 'page_count' in asset:
                 st.write("**Page Count:**", asset['page_count'])
     
-    # Processing Results
     if asset.get('processed', False) and 'processed_paths' in asset:
         with st.expander("Processing Results"):
-            # Markdown Content Preview
             if 'markdown' in asset['processed_paths']:
                 st.markdown("### Content Preview")
                 try:
@@ -60,7 +56,6 @@ def view_file_details(asset):
                 except Exception as e:
                     st.error(f"Error reading markdown: {str(e)}")
             
-            # Images
             if 'images' in asset['processed_paths'] and asset['processed_paths']['images']:
                 st.markdown("### Images")
                 image_cols = st.columns(3)
@@ -73,7 +68,6 @@ def view_file_details(asset):
                         except Exception as e:
                             st.error(f"Error loading image: {str(e)}")
             
-            # Metadata
             if 'meta' in asset['processed_paths']:
                 st.markdown("### Metadata")
                 try:
@@ -89,14 +83,12 @@ def main():
     db = init_mongo()
     raw_assets = db['raw_assets']
     
-    # Fetch all assets
     assets = list(raw_assets.find().sort('upload_date', -1))
     
     if not assets:
         st.info("No files have been uploaded yet.")
         return
     
-    # Display summary metrics
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("Total Files", len(assets))
@@ -110,20 +102,18 @@ def main():
         avg_pages = sum(a.get('page_count', 0) for a in assets) / len(assets)
         st.metric("Avg Pages", f"{avg_pages:.1f}")
     
-    # Create files table
     files_df = pd.DataFrame([
         {
             'File Name': asset['original_name'],
             'Upload Date': asset['upload_date'].strftime("%Y-%m-%d %H:%M"),
             'Size': format_size(asset['file_size']),
             'Status': '🟢 Processed' if asset.get('processed', False) else '🟡 Processing',
-            'Pages': asset.get('page_count', '-'),
+            'Pages': str(asset.get('page_count', '-')),  # Convert to string
             '_id': str(asset['_id'])
         }
         for asset in assets
     ])
     
-    # Allow user to select a file from the table
     selected_indices = st.data_editor(
         files_df.drop('_id', axis=1),
         hide_index=True,
@@ -147,7 +137,7 @@ def main():
                 "Status",
                 width="medium",
             ),
-            "Pages": st.column_config.TextColumn(
+            "Pages": st.column_config.TextColumn(  # Changed to TextColumn
                 "Pages",
                 width="small",
             ),
