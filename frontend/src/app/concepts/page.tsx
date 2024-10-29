@@ -14,16 +14,7 @@ import { Separator } from '@/components/ui/separator'
 import { PlusCircle, Book, Info } from 'lucide-react'
 import ConceptForm from './concept-form'
 import ConceptView from './concept-view'
-
-interface Concept {
-  name: string
-  definition: string
-  citations: string[]
-  synonyms: string[]
-  understanding_level: string
-  created_at: string
-}
-
+import { Concept } from './types'
 export default function ConceptsPage() {
   const [concepts, setConcepts] = useState<Concept[]>([])
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null)

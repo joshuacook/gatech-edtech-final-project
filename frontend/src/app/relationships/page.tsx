@@ -2,187 +2,92 @@
 
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { 
-  Sheet,
-  SheetContent, 
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
-import { Link, Network, BadgePlus } from 'lucide-react'
-import RelationshipForm from './relationship-form'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Link, ListFilter, Network } from 'lucide-react'
 import RelationshipsTable from './relationships-table'
 import NetworkGraph from './network-graph'
-
-interface Relationship {
-  source: string
-  target: string
-  type: string
-  connection_type?: string
-  strength: number
-  created_at: string
-}
-
-interface RelationshipMetrics {
-  total_relationships: number
-  average_strength: number
-  network_density: number
-}
+import { PopulatedRelationship, NetworkGraphNode } from './types'
 
 export default function RelationshipsPage() {
-  const [relationships, setRelationships] = useState<Relationship[]>([])
-  const [metrics, setMetrics] = useState<RelationshipMetrics>({
-    total_relationships: 0,
-    average_strength: 0,
-    network_density: 0
-  })
-  const [editingRelationship, setEditingRelationship] = useState<Relationship | null>(null)
+  const [relationships, setRelationships] = useState<PopulatedRelationship[]>([])
+  const [networkGraphRelationships, setNetworkGraphRelationships] = useState<NetworkGraphNode[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/relationships')
+        const data = await response.json()
+        setRelationships(data)
+        const relationshipsFormatted = data.map((rel: PopulatedRelationship) => ({
+          source: rel.source,
+          target: rel.target,
+          type: rel.type,
+          connection_type: rel.connection_type,
+          strength: rel.strength
+        }))
+        setNetworkGraphRelationships(relationshipsFormatted)
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+  
     fetchData()
   }, [])
 
-  const fetchData = async () => {
-    try {
-      const [relationshipsResponse, metricsResponse] = await Promise.all([
-        fetch('/api/relationships'),
-        fetch('/api/relationships/metrics')
-      ])
-      
-      const relationshipsData = await relationshipsResponse.json()
-      const metricsData = await metricsResponse.json()
-      
-      setRelationships(relationshipsData)
-      setMetrics(metricsData)
-    } catch (error) {
-      console.error('Error fetching data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleDelete = (source: string, target: string) => {
-    setRelationships(prev => 
-      prev.filter(r => !(r.source === source && r.target === target))
+  if (loading && !relationships.length) {
+    return (
+      <div className="p-8">
+        <div>Loading...</div>
+      </div>
     )
-  }
-
-  const handleEdit = (relationship: Relationship) => {
-    setEditingRelationship(relationship)
   }
 
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <Link className="w-8 h-8" />
-            <h1 className="text-3xl font-bold">Relationships Management</h1>
-          </div>
+        <div className="flex items-center space-x-4">
+          <Link className="w-8 h-8" />
+          <h1 className="text-3xl font-bold">Relationships</h1>
+        </div>
+
+        <Tabs defaultValue="network" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
+            <TabsTrigger value="network" className="flex items-center gap-2">
+              <Network className="h-4 w-4" />
+              Network View
+            </TabsTrigger>
+            <TabsTrigger value="list" className="flex items-center gap-2">
+              <ListFilter className="h-4 w-4" />
+              List View
+            </TabsTrigger>
+          </TabsList>
           
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button>
-                <BadgePlus className="mr-2 h-4 w-4" />
-                Create Relationship
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="w-[600px]">
-              <SheetHeader>
-                <SheetTitle>Create New Relationship</SheetTitle>
-              </SheetHeader>
-              <RelationshipForm 
-                onSuccess={() => {
-                  fetchData()
-                }} 
-              />
-            </SheetContent>
-          </Sheet>
-        </div>
-
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Total Relationships</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {metrics.total_relationships}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Average Strength</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {(metrics.average_strength * 100).toFixed(1)}%
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Network Density</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">
-                {(metrics.network_density * 100).toFixed(1)}%
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Network Graph */}
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle>Relationship Network</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[600px]">
-            <NetworkGraph relationships={relationships} />
-          </CardContent>
-        </Card>
-
-        {/* Relationships Table */}
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle>Relationship List</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RelationshipsTable
-              relationships={relationships}
-              onDelete={handleDelete}
-              onEdit={handleEdit}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Edit Sheet */}
-        {editingRelationship && (
-          <Sheet 
-            open={!!editingRelationship} 
-            onOpenChange={() => setEditingRelationship(null)}
-          >
-            <SheetContent className="w-[600px]">
-              <SheetHeader>
-                <SheetTitle>Edit Relationship</SheetTitle>
-              </SheetHeader>
-              <RelationshipForm
-                relationship={editingRelationship}
-                onSuccess={() => {
-                  setEditingRelationship(null)
-                  fetchData()
-                }}
-              />
-            </SheetContent>
-          </Sheet>
-        )}
+          <TabsContent value="network">
+            <Card>
+              <CardHeader>
+                <CardTitle>Relationship Network</CardTitle>
+              </CardHeader>
+              <CardContent className="h-[600px]">
+                <NetworkGraph relationships={networkGraphRelationships} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="list">
+            <Card>
+              <CardHeader>
+                <CardTitle>Relationship List</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RelationshipsTable relationships={networkGraphRelationships} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

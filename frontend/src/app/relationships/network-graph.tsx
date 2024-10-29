@@ -1,84 +1,100 @@
 // app/relationships/network-graph.tsx
 'use client'
 
-import React, { useCallback, useEffect, useRef } from 'react'
-import dynamic from 'next/dynamic'
-const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false })
+import React, { useMemo } from 'react'
+import ReactFlow, { 
+  Node, 
+  Edge,
+  Controls,
+  Background,
+  useNodesState,
+  useEdgesState,
+  ConnectionLineType
+} from 'reactflow'
+import 'reactflow/dist/style.css'
 
-interface Node {
-  id: string
-  name: string
-  val: number
-}
+import { NetworkGraphProps } from './types'
 
-interface Link {
-  source: string
-  target: string
-  value: number
-  type: string
-  connection_type?: string
-}
-
-interface NetworkGraphProps {
-  relationships: Array<{
-    source: string
-    target: string
-    type: string
-    connection_type?: string
-    strength: number
-  }>
+const NODE_TYPES = {
+  concept: {
+    style: {
+      background: 'var(--primary)',
+      color: 'var(--primary-foreground)',
+      border: 'none',
+      borderRadius: '8px',
+      padding: '8px 16px',
+    }
+  }
 }
 
 export default function NetworkGraph({ relationships }: NetworkGraphProps) {
-  const graphRef = useRef()
+  // Transform data into nodes and edges
+  const { initialNodes, initialEdges } = useMemo(() => {
+    const nodeMap = new Map<string, number>()
+    
+    // Count node connections
+    relationships.forEach((r) => {
+      nodeMap.set(r.source, (nodeMap.get(r.source) || 0) + 1)
+      nodeMap.set(r.target, (nodeMap.get(r.target) || 0) + 1)
+    })
 
-  const nodes: Node[] = Array.from(
-    new Set(
-      relationships.flatMap(r => [r.source, r.target])
-    )
-  ).map(id => ({
-    id,
-    name: id,
-    val: relationships.filter(r => r.source === id || r.target === id).length
-  }))
+    // Create nodes with random positions
+    const nodes: Node[] = Array.from(nodeMap.entries()).map(([id, count]) => ({
+      id,
+      data: { 
+        label: `${id}\n(${count} connection${count !== 1 ? 's' : ''})`,
+        connections: count 
+      },
+      position: {
+        x: Math.random() * 800,
+        y: Math.random() * 600
+      },
+      type: 'concept',
+      style: {
+        ...NODE_TYPES.concept.style,
+        fontSize: `${Math.min(16, 12 + count)}px`,
+      }
+    }))
 
-  const links: Link[] = relationships.map(r => ({
-    source: r.source,
-    target: r.target,
-    value: r.strength,
-    type: r.type,
-    connection_type: r.connection_type
-  }))
+    // Create edges with styling based on relationship type
+    const edges: Edge[] = relationships.map((r, index) => ({
+      id: `${r.source}-${r.target}-${index}`,
+      source: r.source,
+      target: r.target,
+      label: `${r.type}${r.connection_type ? ` (${r.connection_type})` : ''}`,
+      type: 'smoothstep',
+      animated: true,
+      style: {
+        strokeWidth: Math.max(1, r.strength * 5),
+        opacity: Math.max(0.2, r.strength),
+      },
+      labelStyle: {
+        fontSize: '12px',
+        fill: 'var(--muted-foreground)',
+      },
+    }))
 
-  const data = {
-    nodes,
-    links
-  }
+    return { initialNodes: nodes, initialEdges: edges }
+  }, [relationships])
 
-  const handleNodeClick = useCallback((node: Node) => {
-    // Handle node click - could zoom in, show details, etc.
-    console.log('Clicked node:', node)
-  }, [])
-
-  const handleLinkClick = useCallback((link: Link) => {
-    // Handle link click - could show relationship details, etc.
-    console.log('Clicked link:', link)
-  }, [])
+  
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes) // @ts-ignore
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges) // @ts-ignore
 
   return (
-    <ForceGraph2D
-      ref={graphRef}
-      graphData={data}
-      nodeLabel="name"
-      nodeColor="var(--primary)"
-      nodeRelSize={6}
-      linkWidth={link => (link.value as number) * 2}
-      linkLabel={link => `${link.type}${link.connection_type ? ` (${link.connection_type})` : ''}`}
-      linkColor={() => "var(--muted-foreground)"}
-      onNodeClick={handleNodeClick}
-      onLinkClick={handleLinkClick}
-      width={800}
-      height={600}
-    />
+    <div className="w-full h-full">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        connectionLineType={ConnectionLineType.SmoothStep}
+        fitView
+        attributionPosition="bottom-left"
+      >
+        <Background />
+        <Controls />
+      </ReactFlow>
+    </div>
   )
 }

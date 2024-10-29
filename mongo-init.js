@@ -3,6 +3,7 @@ db = db.getSiblingDB('chelle');
 
 // Drop existing collections to ensure clean state
 db.concepts.drop();
+db.relationships.drop();
 
 // Insert test concepts
 db.concepts.insertMany([
@@ -52,5 +53,86 @@ db.concepts.insertMany([
     }
 ]);
 
-// Create indexes
+// Create indexes for concepts
 db.concepts.createIndex({ "name": 1 }, { unique: true });
+
+// Insert test relationships
+db.relationships.insertMany([
+    {
+        "source": "User",
+        "target": "Organization",
+        "type": "Subsumption",
+        "strength": 0.8,
+        "created_at": "2024-10-28"
+    },
+    {
+        "source": "Brand",
+        "target": "Sales Process",
+        "type": "Related",
+        "connection_type": "Functional",
+        "strength": 0.4,
+        "created_at": "2024-10-28"
+    },
+    {
+        "source": "User",
+        "target": "Brand",
+        "type": "Related",
+        "connection_type": "Temporal",
+        "strength": 0.4,
+        "created_at": "2024-10-28"
+    },
+    {
+        "source": "Organization",
+        "target": "Sales Process",
+        "type": "Related",
+        "connection_type": "Causal",
+        "strength": 0.4,
+        "created_at": "2024-10-28"
+    }
+]);
+
+// Create indexes for relationships
+db.relationships.createIndex({ "source": 1, "target": 1 }, { unique: true });
+db.relationships.createIndex({ "source": 1 });
+db.relationships.createIndex({ "target": 1 });
+db.relationships.createIndex({ "type": 1 });
+db.relationships.createIndex({ "created_at": -1 });
+
+// Add validation rules for the relationships collection
+db.runCommand({
+    collMod: "relationships",
+    validator: {
+        $jsonSchema: {
+            bsonType: "object",
+            required: ["source", "target", "type", "strength", "created_at"],
+            properties: {
+                source: {
+                    bsonType: "string",
+                    description: "Source concept name - required"
+                },
+                target: {
+                    bsonType: "string",
+                    description: "Target concept name - required"
+                },
+                type: {
+                    enum: ["Equivalence", "Subsumption", "Overlap", "Related", "Disjoint", "None"],
+                    description: "Type of relationship - required"
+                },
+                connection_type: {
+                    enum: ["Causal", "Temporal", "Spatial", "Functional", null],
+                    description: "Specific type of connection for Related relationships"
+                },
+                strength: {
+                    bsonType: "double",
+                    minimum: 0.0,
+                    maximum: 1.0,
+                    description: "Relationship strength (0-1) - required"
+                },
+                created_at: {
+                    bsonType: "string",
+                    description: "Creation date - required"
+                }
+            }
+        }
+    }
+});
