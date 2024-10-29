@@ -1,4 +1,4 @@
-DIRS ?= frontend/src/app api # docker frontend/src frontend.bak prompts
+DIRS ?= frontend/src/app api frontend.bak # docker frontend/src  prompts
 FILES ?= mongo-init.js # docker-compose.yml
 
 IGNORE_DIRS ?= .git node_modules __pycache__ .DS_Store
