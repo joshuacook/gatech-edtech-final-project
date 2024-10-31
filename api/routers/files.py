@@ -10,6 +10,8 @@ from redis import Redis
 from rq import Queue
 import logging
 from pymongo import MongoClient
+from bson import ObjectId
+import json
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -238,4 +240,60 @@ async def get_file_details(file_id: str):
         raise
     except Exception as e:
         logger.error(f"Error getting file details: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@files_router.get("/files/{file_id}/content")
+async def get_file_content(file_id: str):
+    """Get the content of a processed file"""
+    try:
+        db = get_db()
+        raw_assets = db['raw_assets']
+        
+        asset = raw_assets.find_one({'_id': ObjectId(file_id)})
+        if not asset:
+            raise HTTPException(status_code=404, detail="File not found")
+            
+        if not asset.get('processed', False) or 'processed_paths' not in asset:
+            raise HTTPException(status_code=400, detail="File content not available")
+            
+        try:
+            with open(asset['processed_paths']['markdown'], 'r') as f:
+                content = f.read()
+            return {"content": content}
+        except Exception as e:
+            logger.error(f"Error reading content: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error reading file content")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting file content: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@files_router.get("/files/{file_id}/metadata")
+async def get_file_metadata(file_id: str):
+    """Get the metadata for a processed file"""
+    try:
+        db = get_db()
+        raw_assets = db['raw_assets']
+        
+        asset = raw_assets.find_one({'_id': ObjectId(file_id)})
+        if not asset:
+            raise HTTPException(status_code=404, detail="File not found")
+            
+        if not asset.get('processed', False) or 'processed_paths' not in asset:
+            raise HTTPException(status_code=400, detail="File metadata not available")
+            
+        try:
+            with open(asset['processed_paths']['meta'], 'r') as f:
+                metadata = json.load(f)
+            return metadata
+        except Exception as e:
+            logger.error(f"Error reading metadata: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error reading metadata")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting metadata: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
