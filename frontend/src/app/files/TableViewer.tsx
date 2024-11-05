@@ -15,23 +15,13 @@ import {
 import { Table as TableIcon } from 'lucide-react';
 import Papa from 'papaparse';
 
-// Type for table metadata
-interface TableMeta {
-  num_rows: number;
-  num_cols: number;
-  headers: string[];
-}
-
-interface TableMetadata {
-  [key: string]: TableMeta;
-}
-
 const TableViewer = ({ file }) => {
   const [selectedTable, setSelectedTable] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [tableData, setTableData] = useState<string[][]>([]);
-  const [tableMeta, setTableMeta] = useState<TableMeta | null>(null);
+  const [tableData, setTableData] = useState([]);
+  const [tableMeta, setTableMeta] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState(null);
 
   // Early return if file has no tables
   if (!file.has_tables || !file.processed_paths?.tables) {
@@ -40,35 +30,50 @@ const TableViewer = ({ file }) => {
 
   const tables = file.processed_paths.tables;
 
-  const loadTableContent = async (tableName: string) => {
+  const loadTableContent = async (tableName) => {
     try {
       setLoading(true);
+      setTableData([]);
+      setDebugInfo(null);
       
-      // First load table metadata
+      // Load table metadata
       const metaResponse = await fetch(`/api/files/${file.id}/tables/metadata`);
       if (!metaResponse.ok) throw new Error('Failed to load table metadata');
-      const metadata: TableMetadata = await metaResponse.json();
-      
-      // Get metadata for this specific table
-      const currentTableMeta = metadata[tableName];
-      setTableMeta(currentTableMeta);
+      const metadata = await metaResponse.json();
+      setTableMeta(metadata[tableName]);
 
-      // Then load table CSV data
+      // Load table CSV data
       const response = await fetch(`/api/files/${file.id}/tables/${tableName}`);
       if (!response.ok) throw new Error('Failed to load table');
-      const csvText = await response.text();
+      const rawResponse = await response.json();
+      const csvText = rawResponse.content;
+
+      // Debug log
+      console.log('Raw CSV text:', csvText);
       
-      // Parse CSV
+      // Parse CSV with explicit configuration
       Papa.parse(csvText, {
+        delimiter: ',',
+        newline: '\n',
+        header: false,
+        skipEmptyLines: true,
         complete: (results) => {
+          console.log('Parsed results:', results);
+          setDebugInfo({
+            rowCount: results.data.length,
+            firstRowCells: results.data[0]?.length,
+            sampleRow: results.data[0]
+          });
           setTableData(results.data);
         },
         error: (error) => {
-          console.error('Error parsing CSV:', error);
+          console.error('Papa Parse error:', error);
+          setDebugInfo({ error: error.message });
         }
       });
     } catch (error) {
       console.error('Error loading table:', error);
+      setDebugInfo({ error: error.message });
     } finally {
       setLoading(false);
     }
@@ -77,36 +82,50 @@ const TableViewer = ({ file }) => {
   const renderTable = () => {
     if (!tableData.length) return null;
 
+    // Debug display
+    if (debugInfo) {
+      console.log('Debug info:', debugInfo);
+    }
+
     return (
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              {tableData[0].map((header, i) => (
-                <th 
-                  key={i}
-                  className="border border-gray-300 bg-gray-100 px-4 py-2 text-left font-medium"
-                >
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {tableData.slice(1).map((row, i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                {row.map((cell, j) => (
-                  <td 
-                    key={j}
-                    className="border border-gray-300 px-4 py-2"
+      <div className="space-y-4">
+        {debugInfo && (
+          <div className="bg-gray-100 p-4 rounded-lg text-sm font-mono">
+            <div>Rows: {debugInfo.rowCount}</div>
+            <div>Columns: {debugInfo.firstRowCells}</div>
+            <div>First row: {JSON.stringify(debugInfo.sampleRow)}</div>
+          </div>
+        )}
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                {tableData[0]?.map((header, i) => (
+                  <th 
+                    key={i}
+                    className="border border-gray-300 bg-gray-100 px-4 py-2 text-left font-medium"
                   >
-                    {cell}
-                  </td>
+                    {header}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {tableData.slice(1).map((row, i) => (
+                <tr key={i} className="hover:bg-gray-50">
+                  {row.map((cell, j) => (
+                    <td 
+                      key={j}
+                      className="border border-gray-300 px-4 py-2 whitespace-normal break-words"
+                    >
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   };
@@ -141,7 +160,7 @@ const TableViewer = ({ file }) => {
       </DropdownMenu>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+        <DialogContent className="max-w-6xl h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {selectedTable}
