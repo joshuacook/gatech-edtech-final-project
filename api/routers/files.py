@@ -12,9 +12,17 @@ import logging
 from pymongo import MongoClient
 from bson import ObjectId
 import json
+from fastapi.responses import FileResponse as FastAPIFileResponse
+import os
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+class ProcessedPaths(BaseModel):
+    markdown: str
+    images: dict[str, str] = {}
+    tables: dict[str, str] = {}
+    meta: str
 
 class FileResponse(BaseModel):
     id: str
@@ -25,7 +33,12 @@ class FileResponse(BaseModel):
     upload_date: str
     processed_date: Optional[str] = None
     error: Optional[str] = None
-
+    processed_paths: Optional[ProcessedPaths] = None
+    has_images: bool = False
+    image_count: int = 0
+    has_tables: bool = False
+    table_count: int = 0
+    
 class FileDetailResponse(FileResponse):
     preview: Optional[str] = None
     processing_details: Optional[dict] = None
@@ -150,8 +163,6 @@ async def upload_file(file: UploadFile = File(...)):
         logger.error(f"Upload failed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-
 @files_router.get("/files", response_model=List[FileResponse])
 async def list_files():
     """Get list of all files"""
@@ -170,6 +181,10 @@ async def list_files():
                 upload_date = format_datetime(asset['upload_date'])
                 processed_date = format_datetime(asset.get('processed_date')) if asset.get('processed_date') else None
                 
+                # Get image information
+                processed_paths = asset.get('processed_paths', {})
+                images = processed_paths.get('images', {})
+                
                 # Create response object
                 file_response = FileResponse(
                     id=asset_id,
@@ -179,7 +194,17 @@ async def list_files():
                     status=asset.get('status', 'unknown'),
                     upload_date=upload_date,
                     processed_date=processed_date,
-                    error=asset.get('error')
+                    error=asset.get('error'),
+                    processed_paths=ProcessedPaths(
+                        markdown=processed_paths.get('markdown', ''),
+                        images=images,
+                        tables=processed_paths.get('tables', {}),
+                        meta=processed_paths.get('meta', '')
+                    ) if processed_paths else None,
+                    has_images=len(images) > 0,
+                    image_count=len(images),
+                    has_tables=bool(processed_paths.get('tables')),
+                    table_count=len(processed_paths.get('tables', {})) if processed_paths else 0
                 )
                 files.append(file_response)
                 
@@ -194,9 +219,8 @@ async def list_files():
         
     except Exception as e:
         logger.error(f"Error listing files: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))@files_router.get("/files/{file_id}", response_model=FileDetailResponse)
 
-@files_router.get("/files/{file_id}", response_model=FileDetailResponse)
 async def get_file_details(file_id: str):
     """Get detailed information about a specific file"""
     try:
@@ -296,4 +320,106 @@ async def get_file_metadata(file_id: str):
         raise
     except Exception as e:
         logger.error(f"Error getting metadata: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@files_router.get("/files/{file_id}/tables/{table_name}")
+async def get_file_table(file_id: str, table_name: str):
+    """Get a specific table from a file"""
+    try:
+        db = get_db()
+        raw_assets = db['raw_assets']
+        
+        asset = raw_assets.find_one({'_id': ObjectId(file_id)})
+        if not asset:
+            raise HTTPException(status_code=404, detail="File not found")
+            
+        if not asset.get('processed_paths', {}).get('tables', {}):
+            raise HTTPException(status_code=404, detail="No tables found for this file")
+            
+        tables = asset['processed_paths']['tables']
+        if table_name not in tables:
+            raise HTTPException(status_code=404, detail="Table not found")
+            
+        table_path = tables[table_name]
+        
+        # Read and return the HTML content
+        with open(table_path, 'r') as f:
+            table_content = f.read()
+        
+        return {"content": table_content}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error serving table: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@files_router.delete("/files/{file_id}")
+async def delete_file(file_id: str):
+    """Delete a file and its processed contents"""
+    try:
+        logger.debug(f"Attempting to delete file: {file_id}")
+        db = get_db()
+        raw_assets = db['raw_assets']
+        
+        # Get file details
+        asset = raw_assets.find_one({'_id': ObjectId(file_id)})
+        if not asset:
+            raise HTTPException(status_code=404, detail="File not found")
+            
+        # Delete raw file
+        raw_file_path = os.path.join('/app', 'filestore', 'raw', asset['stored_name'])
+        if os.path.exists(raw_file_path):
+            os.remove(raw_file_path)
+            
+        # Delete processed files if they exist
+        if asset.get('processed_paths'):
+            processed_dir = os.path.dirname(asset['processed_paths']['markdown'])
+            if os.path.exists(processed_dir):
+                import shutil
+                shutil.rmtree(processed_dir)
+        
+        # Delete database record
+        raw_assets.delete_one({'_id': ObjectId(file_id)})
+        
+        return {"message": "File deleted successfully"}
+        
+    except Exception as e:
+        logger.error(f"Error deleting file: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@files_router.get("/files/{file_id}/images/{image_name}")
+async def get_file_image(file_id: str, image_name: str):
+    """Get a specific image from a file"""
+    try:
+        db = get_db()
+        raw_assets = db['raw_assets']
+        
+        # Find the asset
+        from bson import ObjectId
+        asset = raw_assets.find_one({'_id': ObjectId(file_id)})
+        if not asset:
+            raise HTTPException(status_code=404, detail="File not found")
+            
+        # Check if file has processed images
+        if not asset.get('processed_paths', {}).get('images', {}):
+            raise HTTPException(status_code=404, detail="No images found for this file")
+            
+        # Get the image path
+        images = asset['processed_paths']['images']
+        if image_name not in images:
+            raise HTTPException(status_code=404, detail="Image not found")
+            
+        image_path = images[image_name]
+        
+        # Verify file exists
+        if not os.path.exists(image_path):
+            raise HTTPException(status_code=404, detail="Image file not found")
+            
+        return FastAPIFileResponse(image_path)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error serving image: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

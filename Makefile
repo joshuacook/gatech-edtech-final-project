@@ -1,5 +1,5 @@
-DIRS ?= frontend/src/app api frontend.bak # docker frontend/src  prompts
-FILES ?= mongo-init.js # docker-compose.yml
+DIRS ?= frontend/src/app/files api # docker frontend/src  prompts
+FILES ?= # mongo-init.js docker-compose.yml
 
 IGNORE_DIRS ?= .git node_modules __pycache__ .DS_Store
 IGNORE_FILES ?= *.pyc *.pyo *.ico *.woff *.woff2 *.ttf *.eot *.svg *.png *.jpg *.jpeg *.gif
@@ -20,7 +20,6 @@ reset:
 	docker-compose up -d
 
 build:
-	cd frontend && npm install && npm run build
 	docker-compose build --no-cache
 
 logs:

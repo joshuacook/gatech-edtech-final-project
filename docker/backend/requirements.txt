@@ -2,10 +2,13 @@
 
 anthropic[bedrock]
 fastapi
+fitz
 instructor
 networkx
 plotly
 pymongo
+PyMuPDF
+python-docx
 python-magic
 python-multipart
 redis
