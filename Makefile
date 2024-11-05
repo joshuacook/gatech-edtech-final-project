@@ -22,6 +22,11 @@ reset:
 build:
 	docker-compose build --no-cache
 
+lint:
+	ruff check . --fix
+	ruff format .
+	isort .
+
 logs:
 	docker-compose logs -f api frontend db
 

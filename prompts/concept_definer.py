@@ -49,4 +49,3 @@ by a horizontal rule.
 
 [TARGET_TERM] is: "{term}"
 """
-
