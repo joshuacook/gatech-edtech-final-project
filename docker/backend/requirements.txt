@@ -4,6 +4,7 @@ anthropic[bedrock]
 fastapi
 fitz
 instructor
+langfuse
 networkx
 plotly
 pymongo

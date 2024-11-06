@@ -40,7 +40,7 @@ npm-install-%:
 	cd frontend && npm install $* --save
 	docker exec -i $(FRONTEND_CONTAINER) npm install $*
 
-cat:
+cat-current-files:
 	@> $(TMP_FILE)
 	@echo "Processing files..."
 	@# Process individual files first
@@ -75,3 +75,9 @@ cat:
 	@cat $(TMP_FILE) | pbcopy
 	@rm $(TMP_FILE)
 	@echo "Done!"
+
+cat-api-files:
+	cat-current-files DIRS=api FILES=docker-compose.yml requirements.txt
+
+cat-frontend-files:
+	cat-current-files DIRS=frontend/src/app/files
