@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import time
+import zipfile
 from datetime import datetime
 from typing import Dict, Tuple
 
@@ -75,7 +76,6 @@ def process_docx_content(
     processed_dir: str
 ) -> Tuple[Dict[str, str], Dict[str, str]]:
     """Extract tables and images from a DOCX file"""
-    # Update trace with file info
     langfuse_context.update_current_observation(
         metadata={
             "file_path": file_path,
@@ -117,33 +117,59 @@ def process_docx_content(
     with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(tables_meta, f, ensure_ascii=False, indent=2)
     
-    # Process images
+    # Process images with improved error handling and logging
     image_paths = {}
+    images_dir = os.path.join(processed_dir, "images")
+    os.makedirs(images_dir, exist_ok=True)
+
     try:
-        images_dir = os.path.join(processed_dir, "images")
-        os.makedirs(images_dir, exist_ok=True)
-        
         with zipfile.ZipFile(file_path) as doc_zip:
+            # Log available files in the zip for debugging
+            logger.debug(f"Files in DOCX: {doc_zip.namelist()}")
+            
             for file in doc_zip.filelist:
                 if file.filename.startswith("word/media/"):
-                    filename = os.path.basename(file.filename)
-                    image_path = os.path.join(images_dir, filename)
-                    with open(image_path, "wb") as f:
-                        f.write(doc_zip.read(file.filename))
-                    image_paths[filename] = image_path
+                    try:
+                        filename = os.path.basename(file.filename)
+                        image_path = os.path.join(images_dir, filename)
+                        
+                        # Log each image extraction
+                        logger.debug(f"Extracting image: {filename} to {image_path}")
+                        
+                        # Extract the image
+                        image_data = doc_zip.read(file.filename)
+                        
+                        # Save the image
+                        with open(image_path, "wb") as f:
+                            f.write(image_data)
+                        
+                        # Only add to paths if successfully saved
+                        image_paths[filename] = image_path
+                        logger.debug(f"Successfully saved image: {filename}")
+                        
+                    except Exception as img_error:
+                        logger.error(f"Error processing individual image {file.filename}: {str(img_error)}")
+                        continue
     except Exception as e:
         logger.error(f"Error extracting images from DOCX: {str(e)}")
         langfuse_context.update_current_observation(
             level="ERROR",
-            metadata={"error": str(e)}
+            metadata={
+                "error": str(e),
+                "error_type": "image_extraction_error"
+            }
         )
 
+    # Log results
+    logger.debug(f"Processed {len(image_paths)} images and {len(table_paths)} tables")
+    
     # Update trace with processing results
     langfuse_context.update_current_observation(
         metadata={
             "tables_processed": len(table_paths),
             "images_processed": len(image_paths),
-            "tables_meta": tables_meta
+            "tables_meta": tables_meta,
+            "image_paths": list(image_paths.keys())  # Log which images were processed
         }
     )
 
@@ -160,7 +186,6 @@ def save_marker_results(file_hash: str, data: dict, filestore_base: str):
         if not asset:
             raise Exception(f"Asset not found: {file_hash}")
             
-        # Add file metadata to trace
         add_file_metadata(asset)
         
         processed_dir = os.path.join(filestore_base, "processed", file_hash)
@@ -168,22 +193,37 @@ def save_marker_results(file_hash: str, data: dict, filestore_base: str):
         
         # Save markdown content
         markdown_path = os.path.join(processed_dir, "content.md")
-        with open(markdown_path, "w") as f:
+        with open(markdown_path, "w", encoding='utf-8') as f:
             f.write(data["markdown"])
             
         table_paths = {}
         image_paths = {}
         
-        # Process DOCX files
-        if asset["file_type"] == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-            table_paths, image_paths = process_docx_content(asset["file_path"], processed_dir)
+        # Process DOCX files for tables and images
+        if (
+            asset["file_type"]
+            == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ):
+            logger.debug(f"Processing DOCX file: {asset['file_path']}")
+            table_paths, image_paths = process_docx_content(
+                asset["file_path"], 
+                processed_dir
+            )
+            logger.debug(f"DOCX processing complete. Images: {len(image_paths)}, Tables: {len(table_paths)}")
             
         # Save metadata
         meta_path = os.path.join(processed_dir, "meta.json")
-        with open(meta_path, "w") as f:
-            json.dump(data["meta"], f)
+        with open(meta_path, "w", encoding='utf-8') as f:
+            json.dump(data["meta"], f, ensure_ascii=False, indent=2)
             
-        # Update asset record
+        # Prepare update data
+        processing_details = {
+            "completion_time": datetime.now().isoformat(),
+            "extracted_pages": data.get("page_count", 1),
+            "extracted_images": len(image_paths),
+            "extracted_tables": len(table_paths),
+        }
+
         update_data = {
             "processed": True,
             "processed_paths": {
@@ -197,27 +237,36 @@ def save_marker_results(file_hash: str, data: dict, filestore_base: str):
             "image_count": len(image_paths),
             "has_tables": len(table_paths) > 0,
             "table_count": len(table_paths),
-            "processing_details": {
-                "completion_time": datetime.now().isoformat(),
-                "extracted_pages": data.get("page_count", 1),
-                "extracted_images": len(image_paths),
-                "extracted_tables": len(table_paths),
-            }
+            "processing_details": processing_details
         }
         
+        # Log the update data for debugging
+        logger.debug(f"Updating asset with data: {json.dumps(update_data, indent=2)}")
+        
+        # Update the database
         assets.update_one(
             {"file_hash": file_hash},
             {"$set": update_data}
         )
         
-        # Update trace with processing results
+        # Update trace with multi-modal content info
+        content_parts = [{
+            "type": "text",
+            "text": data["markdown"]
+        }]
+        
+        # Add image references
+        for image_name in image_paths:
+            content_parts.append({
+                "type": "image_url",
+                "image_url": {
+                    "url": f"/api/files/{file_hash}/images/{image_name}"
+                }
+            })
+            
         langfuse_context.update_current_observation(
-            metadata=update_data["processing_details"],
-            output={
-                "markdown_path": markdown_path,
-                "image_count": len(image_paths),
-                "table_count": len(table_paths)
-            }
+            metadata=processing_details,
+            output=content_parts
         )
         
         update_asset_status(file_hash, "complete")
@@ -231,7 +280,6 @@ def save_marker_results(file_hash: str, data: dict, filestore_base: str):
             metadata={"error": str(e)}
         )
         raise
-
 @observe()
 def process_with_marker(file_hash: str):
     """Process a file with the Marker API"""
