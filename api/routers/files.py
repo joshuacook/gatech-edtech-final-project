@@ -8,12 +8,14 @@ from datetime import datetime
 from typing import List, Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse as FastAPIFileResponse
+from langfuse.decorators import langfuse_context
 from pydantic import BaseModel
 from pymongo import MongoClient
 from redis import Redis
 from rq import Queue
+from utils.langfuse_utils import add_file_metadata, fastapi_observe
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -113,19 +115,17 @@ def save_file(file_data: bytes, original_filename: str, content_type: str) -> di
         raise HTTPException(status_code=500, detail="Failed to save file")
 
 
-@files_router.post("/upload", response_model=FileResponse)
-async def upload_file(file: UploadFile = File(...)):
-    """Handle file upload and queue processing job"""
+@files_router.post("/upload")
+@fastapi_observe()
+async def upload_file(request: Request, file: UploadFile = File(...)):
     try:
-        logger.debug(f"Processing upload for file: {file.filename}")
-
-        # Read file content
         file_content = await file.read()
-
-        # Save file to disk
         file_details = save_file(file_content, file.filename, file.content_type)
 
-        # Create database record
+        # Add file metadata to trace
+        add_file_metadata(file_details)
+
+        # Create database record and queue processing
         db = get_db()
         raw_assets = db["raw_assets"]
 
@@ -143,15 +143,12 @@ async def upload_file(file: UploadFile = File(...)):
 
         result = raw_assets.insert_one(asset_record)
 
-        # Queue processing job
+        # Queue processing job and update with job ID
         queue = get_redis_queue()
         job = queue.enqueue(
             "jobs.process_with_marker", file_details["file_hash"], job_timeout="1h"
         )
 
-        logger.debug(f"Created job {job.id} for file {file_details['file_hash']}")
-
-        # Update record with job ID
         raw_assets.update_one({"_id": result.inserted_id}, {"$set": {"job_id": job.id}})
 
         return FileResponse(
@@ -165,6 +162,10 @@ async def upload_file(file: UploadFile = File(...)):
 
     except Exception as e:
         logger.error(f"Upload failed: {str(e)}")
+        # Update trace with error
+        langfuse_context.update_current_observation(
+            level="ERROR", metadata={"error": str(e)}
+        )
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -286,8 +287,8 @@ async def get_file_details(file_id: str):
 
 
 @files_router.get("/files/{file_id}/content")
-async def get_file_content(file_id: str):
-    """Get the content of a processed file"""
+@fastapi_observe()
+async def get_file_content(request: Request, file_id: str):
     try:
         db = get_db()
         raw_assets = db["raw_assets"]
@@ -299,18 +300,35 @@ async def get_file_content(file_id: str):
         if not asset.get("processed", False) or "processed_paths" not in asset:
             raise HTTPException(status_code=400, detail="File content not available")
 
-        try:
-            with open(asset["processed_paths"]["markdown"], "r") as f:
-                content = f.read()
-            return {"content": content}
-        except Exception as e:
-            logger.error(f"Error reading content: {str(e)}")
-            raise HTTPException(status_code=500, detail="Error reading file content")
+        # Add multi-modal content to trace
+        content_parts = []
 
-    except HTTPException:
-        raise
+        # Add markdown content
+        with open(asset["processed_paths"]["markdown"], "r") as f:
+            markdown_content = f.read()
+            content_parts.append({"type": "text", "text": markdown_content})
+
+        # Add images if present
+        for image_name, image_path in (
+            asset.get("processed_paths", {}).get("images", {}).items()
+        ):
+            content_parts.append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"/api/files/{file_id}/images/{image_name}"},
+                }
+            )
+
+        # Update trace with multi-modal content
+        langfuse_context.update_current_observation(input=file_id, output=content_parts)
+
+        return {"content": markdown_content}
+
     except Exception as e:
         logger.error(f"Error getting file content: {str(e)}")
+        langfuse_context.update_current_observation(
+            level="ERROR", metadata={"error": str(e)}
+        )
         raise HTTPException(status_code=500, detail=str(e))
 
 

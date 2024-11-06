@@ -1,8 +1,8 @@
-DIRS ?= frontend/src/app/files api # docker frontend/src  prompts
+DIRS ?= frontend/src/app/files api
 FILES ?= # mongo-init.js docker-compose.yml
 
-IGNORE_DIRS ?= .git node_modules __pycache__ .DS_Store
-IGNORE_FILES ?= *.pyc *.pyo *.ico *.woff *.woff2 *.ttf *.eot *.svg *.png *.jpg *.jpeg *.gif
+IGNORE_DIRS ?= .git node_modules __pycache__ .DS_Store .ipynb_checkpoints
+IGNORE_FILES ?= *.pyc *.pyo *.ico *.woff *.woff2 *.ttf *.eot *.svg *.png *.jpg *.jpeg *.gif *.ipynb
 comma := ,
 space := $(empty) $(empty)
 TMP_FILE := $(shell mktemp)
@@ -77,7 +77,7 @@ cat-current-files:
 	@echo "Done!"
 
 cat-api-files:
-	cat-current-files DIRS=api FILES=docker-compose.yml requirements.txt
+	$(MAKE) cat-current-files DIRS="api" FILES="docker-compose.yml requirements.txt"
 
 cat-frontend-files:
-	cat-current-files DIRS=frontend/src/app/files
+	$(MAKE) cat-current-files DIRS="frontend/src/app/files"
