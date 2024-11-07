@@ -33,8 +33,8 @@ def read_root():
     return {"message": "Hello World"}
 
 
-app.include_router(chat_router, prefix="/api")
-app.include_router(concepts_router, prefix="/api")
-app.include_router(files_router, prefix="/api")
-app.include_router(operations_router, prefix="/api")
-app.include_router(relationships_router, prefix="/api")
+app.include_router(chat_router)
+app.include_router(concepts_router)
+app.include_router(files_router)
+app.include_router(operations_router)
+app.include_router(relationships_router)

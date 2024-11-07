@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://api:8000/api/:path*' // Proxy to FastAPI
+        destination: 'http://api:8000/:path*' // Proxy to FastAPI
       }
     ]
   }

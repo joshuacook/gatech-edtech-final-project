@@ -55,7 +55,7 @@ def upload_fixture_file():
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
             }
-            response = requests.post("http://api:8000/api/upload", files=files)
+            response = requests.post("http://api:8000/upload", files=files)
             
         if response.status_code == 200:
             print("Fixture file uploaded successfully!")
