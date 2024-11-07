@@ -146,7 +146,9 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         # Queue processing job and update with job ID
         queue = get_redis_queue()
         job = queue.enqueue(
-            "jobs.process_with_marker", file_details["file_hash"], job_timeout="1h"
+            "jobs.assets.process_with_marker",
+            file_details["file_hash"],
+            job_timeout="1h",
         )
 
         raw_assets.update_one({"_id": result.inserted_id}, {"$set": {"job_id": job.id}})
