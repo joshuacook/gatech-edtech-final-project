@@ -15,6 +15,7 @@ python-multipart
 redis
 requests
 rq
+rq-dashboard
 streamlit
 uvicorn
 

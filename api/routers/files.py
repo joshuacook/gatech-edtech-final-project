@@ -146,7 +146,7 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         # Queue processing job and update with job ID
         queue = get_redis_queue()
         job = queue.enqueue(
-            "jobs.assets.process_with_marker",
+            "jobs.extract_assets.process_with_marker",
             file_details["file_hash"],
             job_timeout="1h",
         )
