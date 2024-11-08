@@ -2,7 +2,6 @@
 
 import logging
 import os
-from typing import Optional
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,7 +19,6 @@ logger = logging.getLogger(__name__)
 app = fastapi.FastAPI()
 
 
-
 # Configure logging on startup
 @app.on_event("startup")
 async def startup_event():
@@ -29,6 +27,7 @@ async def startup_event():
     initial_level = os.getenv("LOG_LEVEL", "INFO")
     result = configure_logging(initial_level)
     logger.info(result)
+
 
 # Add CORS middleware
 app.add_middleware(

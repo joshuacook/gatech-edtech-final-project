@@ -10,6 +10,7 @@ from typing import List, Optional
 from bson import ObjectId
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse as FastAPIFileResponse
+from jobs.assets.base import AssetProcessor
 from langfuse.decorators import langfuse_context
 from pydantic import BaseModel
 from pymongo import MongoClient
@@ -121,11 +122,9 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
     try:
         file_content = await file.read()
         file_details = save_file(file_content, file.filename, file.content_type)
-
-        # Add file metadata to trace
         add_file_metadata(file_details)
 
-        # Create database record and queue processing
+        # Create database record
         db = get_db()
         raw_assets = db["raw_assets"]
 
@@ -143,28 +142,20 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
 
         result = raw_assets.insert_one(asset_record)
 
-        # Queue processing job and update with job ID
-        queue = get_redis_queue()
-        job = queue.enqueue(
-            "jobs.extract_assets.process_with_marker",
-            file_details["file_hash"],
-            job_timeout="1h",
-        )
-
-        raw_assets.update_one({"_id": result.inserted_id}, {"$set": {"job_id": job.id}})
+        # Queue all processors using the base class
+        AssetProcessor.queue_all(file_details["file_hash"])
 
         return FileResponse(
             id=str(result.inserted_id),
             name=file_details["original_name"],
             size=file_details["file_size"],
             type=file_details["file_type"],
-            status="uploaded",
+            status="processing_queued",
             upload_date=datetime.now().isoformat(),
         )
 
     except Exception as e:
         logger.error(f"Upload failed: {str(e)}")
-        # Update trace with error
         langfuse_context.update_current_observation(
             level="ERROR", metadata={"error": str(e)}
         )
@@ -288,6 +279,7 @@ async def get_file_details(file_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# routers/files.py
 @files_router.get("/files/{file_id}/content")
 @fastapi_observe()
 async def get_file_content(request: Request, file_id: str):
@@ -299,21 +291,34 @@ async def get_file_content(request: Request, file_id: str):
         if not asset:
             raise HTTPException(status_code=404, detail="File not found")
 
-        if not asset.get("processed", False) or "processed_paths" not in asset:
-            raise HTTPException(status_code=400, detail="File content not available")
+        # Check if processed_paths exists and has markdown field
+        processed_paths = asset.get("processed_paths", {})
+        if not processed_paths or "markdown" not in processed_paths:
+            logger.error(
+                f"File {file_id} missing processed content. Status: {asset.get('status')}, Paths: {processed_paths}"
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=f"Content not ready. Current status: {asset.get('status', 'unknown')}",
+            )
+
+        markdown_path = processed_paths["markdown"]
+        if not os.path.exists(markdown_path):
+            logger.error(f"Markdown file missing at {markdown_path}")
+            raise HTTPException(
+                status_code=500, detail="Content file not found on disk"
+            )
 
         # Add multi-modal content to trace
         content_parts = []
 
         # Add markdown content
-        with open(asset["processed_paths"]["markdown"], "r") as f:
+        with open(markdown_path, "r") as f:
             markdown_content = f.read()
             content_parts.append({"type": "text", "text": markdown_content})
 
         # Add images if present
-        for image_name, image_path in (
-            asset.get("processed_paths", {}).get("images", {}).items()
-        ):
+        for image_name, image_path in processed_paths.get("images", {}).items():
             content_parts.append(
                 {
                     "type": "image_url",
@@ -326,6 +331,8 @@ async def get_file_content(request: Request, file_id: str):
 
         return {"content": markdown_content}
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error getting file content: {str(e)}")
         langfuse_context.update_current_observation(

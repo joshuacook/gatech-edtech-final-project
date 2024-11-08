@@ -1,8 +1,9 @@
 # api/routers/chat.py
 
-from typing import Dict, List, Optional
-from anthropic import AnthropicBedrock
 import os
+from typing import Dict, List, Optional
+
+from anthropic import AnthropicBedrock
 from fastapi import APIRouter, Request
 from langfuse.decorators import langfuse_context
 from pydantic import BaseModel
@@ -17,14 +18,17 @@ client = AnthropicBedrock(
 )
 MODEL_ID = "claude-3-5-sonnet-20241022"
 
+
 class ChatRequest(BaseModel):
     query: str
     messages: Optional[List[Dict[str, str]]] = None
     session_id: Optional[str] = None
     user_id: Optional[str] = None
 
+
 class ChatResponse(BaseModel):
     message: str
+
 
 @chat_router.post("/chat", response_model=ChatResponse)
 @fastapi_observe(as_type="generation")
@@ -32,8 +36,7 @@ async def chat(request: Request, chat_request: ChatRequest):
     # Update trace with session and user info if provided
     if chat_request.session_id or chat_request.user_id:
         langfuse_context.update_current_trace(
-            session_id=chat_request.session_id,
-            user_id=chat_request.user_id
+            session_id=chat_request.session_id, user_id=chat_request.user_id
         )
 
     # Prepare messages
@@ -47,7 +50,7 @@ async def chat(request: Request, chat_request: ChatRequest):
             "model": MODEL_ID,
             "max_tokens": 2048,
             "temperature": 0.5,
-        }
+        },
     )
 
     # Call the client
@@ -56,14 +59,14 @@ async def chat(request: Request, chat_request: ChatRequest):
         messages=messages,
         model="anthropic.claude-3-sonnet-20240229-v1:0",
     )
-    
+
     # Ensure response_text is a string
     response_text = message.content[0].text
-    
+
     # Update observation with output and usage
     input_tokens = message.usage.input_tokens
     output_tokens = message.usage.output_tokens
-    
+
     langfuse_context.update_current_observation(
         output=response_text,
         usage={

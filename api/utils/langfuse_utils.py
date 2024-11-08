@@ -7,9 +7,7 @@ from langfuse.decorators import langfuse_context, observe
 
 def configure_langfuse():
     """Configure global Langfuse settings"""
-    langfuse_context.configure(
-        debug=False
-    )
+    langfuse_context.configure(debug=False)
 
 
 def get_trace_metadata(request: Optional[Request] = None):

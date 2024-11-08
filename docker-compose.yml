@@ -83,6 +83,8 @@ services:
     env_file:
       - .env
     command: rq worker --url redis://redis:6379 --logging_level WARNING
+    deploy:
+      replicas: 4
     depends_on:
       - redis
       - db
