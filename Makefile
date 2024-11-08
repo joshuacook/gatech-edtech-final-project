@@ -28,10 +28,13 @@ lint:
 	isort .
 
 logs:
-	docker-compose logs -f api frontend db
+	docker-compose logs -f api frontend db | grep -v DEBUG
+
+logs-backend:
+	docker-compose logs -f api worker | grep -v DEBUG
 
 logs-frontend:
-	docker-compose logs -f frontend api
+	docker-compose logs -f frontend api | grep -v DEBUG
 
 ps:
 	docker-compose ps
@@ -75,6 +78,9 @@ cat-current-files:
 	@cat $(TMP_FILE) | pbcopy
 	@rm $(TMP_FILE)
 	@echo "Done!"
+
+cat-application-files:
+	$(MAKE) cat-current-files DIRS="frontend/src api docker" FILES="docker-compose.yml"
 
 cat-api-files:
 	$(MAKE) cat-current-files DIRS="api" FILES="docker-compose.yml requirements.txt"

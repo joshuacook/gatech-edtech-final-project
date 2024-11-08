@@ -8,7 +8,7 @@ from langfuse.decorators import langfuse_context, observe
 def configure_langfuse():
     """Configure global Langfuse settings"""
     langfuse_context.configure(
-        debug=True  # Enables detailed logging
+        debug=False
     )
 
 
