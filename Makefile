@@ -14,7 +14,7 @@ up:
 down:
 	docker-compose down
 
-reset:
+reset: lint
 	docker-compose down --volumes
 	rm -rf filestore
 	docker-compose up -d

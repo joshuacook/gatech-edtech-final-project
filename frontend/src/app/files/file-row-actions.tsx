@@ -3,14 +3,14 @@ import { Button } from '@/components/ui/button';
 import { FileText, Trash2 } from 'lucide-react';
 import ImageViewer from './ImageViewer';
 import TableViewer from './TableViewer';
+import MetadataViewer from './MetadataViewer';
 
 const FileRowActions = ({ file, onViewContent, onDeleteClick }) => {
-  const { has_tables, table_count } = file;
-
   return (
     <div className="flex justify-end space-x-2">
+      <MetadataViewer file={file} />
       <ImageViewer file={file} />
-      {has_tables && <TableViewer file={file} />}
+      {file.has_tables && <TableViewer file={file} />}
       <Button
         variant="ghost"
         size="icon"

@@ -1,11 +1,10 @@
 # api/routers/files.py
-
 import hashlib
 import json
 import logging
 import os
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from bson import ObjectId
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
@@ -22,11 +21,25 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
+class TablePaths(BaseModel):
+    csv: str
+    html: str
+
+
+class TableMetadataResponse(BaseModel):
+    num_rows: int
+    num_cols: int
+    headers: List[str]
+    empty_cells: int
+    total_cells: int
+
+
 class ProcessedPaths(BaseModel):
-    markdown: str
-    images: dict[str, str] = {}
-    tables: dict[str, str] = {}
-    meta: str
+    markdown: str = ""
+    images: Dict[str, str] = {}
+    tables: Dict[str, TablePaths] = {}
+    meta: str = ""
+    metadata: Optional[str] = ""
 
 
 class FileResponse(BaseModel):
@@ -43,6 +56,7 @@ class FileResponse(BaseModel):
     image_count: int = 0
     has_tables: bool = False
     table_count: int = 0
+    metadata: Optional[dict] = None
 
 
 class FileDetailResponse(FileResponse):
@@ -51,6 +65,15 @@ class FileDetailResponse(FileResponse):
 
 
 files_router = APIRouter()
+
+
+def convert_table_paths(table_data: Dict) -> Dict[str, TablePaths]:
+    """Convert raw table data to proper TablePaths objects"""
+    converted = {}
+    for table_name, paths in table_data.items():
+        if isinstance(paths, dict) and "csv" in paths and "html" in paths:
+            converted[table_name] = TablePaths(csv=paths["csv"], html=paths["html"])
+    return converted
 
 
 def format_datetime(dt) -> str:
@@ -170,9 +193,18 @@ async def list_files():
         db = get_db()
         raw_assets = db["raw_assets"]
 
+        count = raw_assets.count_documents({})
+        logger.debug(f"Found {count} documents in raw_assets")
+
         files = []
-        for asset in raw_assets.find().sort("upload_date", -1):
+        cursor = raw_assets.find().sort("upload_date", -1)
+
+        for asset in cursor:
             try:
+                logger.debug(
+                    f"Processing asset: {asset.get('original_name', 'unknown')}"
+                )
+
                 # Convert MongoDB ObjectId to string
                 asset_id = str(asset["_id"])
 
@@ -184,9 +216,26 @@ async def list_files():
                     else None
                 )
 
-                # Get image information
+                # Get processed paths
                 processed_paths = asset.get("processed_paths", {})
-                images = processed_paths.get("images", {})
+                if not isinstance(processed_paths, dict):
+                    processed_paths = {}
+
+                # Convert table paths to proper format
+                tables = processed_paths.get("tables", {})
+                converted_tables = convert_table_paths(tables)
+
+                # Create ProcessedPaths model
+                paths = ProcessedPaths(
+                    markdown=processed_paths.get("markdown", ""),
+                    images=processed_paths.get("images", {}),
+                    tables=converted_tables,
+                    meta=processed_paths.get("meta", ""),
+                    metadata=processed_paths.get("metadata", ""),
+                )
+                metadata = asset.get("metadata")
+                if metadata:
+                    logger.debug(f"Found metadata for {asset_id}: {metadata}")
 
                 # Create response object
                 file_response = FileResponse(
@@ -198,37 +247,27 @@ async def list_files():
                     upload_date=upload_date,
                     processed_date=processed_date,
                     error=asset.get("error"),
-                    processed_paths=ProcessedPaths(
-                        markdown=processed_paths.get("markdown", ""),
-                        images=images,
-                        tables=processed_paths.get("tables", {}),
-                        meta=processed_paths.get("meta", ""),
-                    )
-                    if processed_paths
-                    else None,
-                    has_images=len(images) > 0,
-                    image_count=len(images),
-                    has_tables=bool(processed_paths.get("tables")),
-                    table_count=len(processed_paths.get("tables", {}))
-                    if processed_paths
-                    else 0,
+                    processed_paths=paths,
+                    has_images=bool(asset.get("has_images", False)),
+                    image_count=asset.get("image_count", 0),
+                    has_tables=bool(asset.get("has_tables", False)),
+                    table_count=asset.get("table_count", 0),
+                    metadata=metadata,
                 )
+
+                logger.debug(f"Created FileResponse for {asset_id}")
                 files.append(file_response)
 
-                logger.debug(f"Processed file record: {asset_id}")
-
             except Exception as e:
-                logger.error(f"Error processing file record: {str(e)}")
+                logger.error(f"Error processing file record: {str(e)}", exc_info=True)
                 continue
 
         logger.debug(f"Returning {len(files)} files")
         return files
 
     except Exception as e:
-        logger.error(f"Error listing files: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e)) @ files_router.get(
-            "/files/{file_id}", response_model=FileDetailResponse
-        )
+        logger.error(f"Error listing files: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 async def get_file_details(file_id: str):
@@ -341,104 +380,122 @@ async def get_file_content(request: Request, file_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+logger = logging.getLogger(__name__)
+
+
 @files_router.get("/files/{file_id}/tables/metadata")
 async def get_file_tables_metadata(file_id: str):
     """Get metadata for all tables in a file"""
     try:
+        logger.debug(f"Fetching table metadata for file {file_id}")
         db = get_db()
         raw_assets = db["raw_assets"]
 
+        # Find the asset
         asset = raw_assets.find_one({"_id": ObjectId(file_id)})
         if not asset:
+            logger.error(f"File not found: {file_id}")
             raise HTTPException(status_code=404, detail="File not found")
 
-        if not asset.get("processed_paths", {}).get("tables", {}):
+        # Check if file has tables
+        processed_paths = asset.get("processed_paths", {})
+        tables = processed_paths.get("tables", {})
+
+        if not tables:
+            logger.debug(f"No tables found for file {file_id}")
             raise HTTPException(status_code=404, detail="No tables found for this file")
 
-        tables_dir = os.path.dirname(
-            list(asset["processed_paths"]["tables"].values())[0]
-        )
-        meta_path = os.path.join(tables_dir, "tables_meta.json")
+        # Get the tables directory from the first table's CSV path
+        first_table = next(iter(tables.values()))
+        if isinstance(first_table, dict) and "csv" in first_table:
+            csv_path = first_table["csv"]
+            tables_dir = os.path.dirname(csv_path)
+        else:
+            logger.error(f"Invalid table path structure: {first_table}")
+            raise HTTPException(status_code=500, detail="Invalid table path structure")
 
+        # Look for metadata file
+        meta_path = os.path.join(tables_dir, "tables_meta.json")
+        logger.debug(f"Looking for metadata at: {meta_path}")
+
+        # Check if metadata file exists
         if not os.path.exists(meta_path):
+            logger.error(f"Metadata file not found at {meta_path}")
             raise HTTPException(status_code=404, detail="Table metadata not found")
 
-        with open(meta_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+        # Read and return metadata
+        try:
+            with open(meta_path, "r", encoding="utf-8") as f:
+                metadata = json.load(f)
+                logger.debug(f"Successfully loaded metadata for {len(metadata)} tables")
+
+                # Log the metadata structure for debugging
+                logger.debug(f"Metadata structure: {json.dumps(metadata, indent=2)}")
+
+                return metadata
+        except json.JSONDecodeError as e:
+            logger.error(f"Error parsing metadata JSON: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error reading table metadata")
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error serving table metadata: {str(e)}")
+        logger.error(f"Error serving table metadata: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @files_router.get("/files/{file_id}/tables/{table_name}")
 async def get_file_table(file_id: str, table_name: str):
-    """Get a specific table from a file"""
+    """Get a specific table's content"""
     try:
+        logger.debug(f"Fetching table {table_name} for file {file_id}")
         db = get_db()
         raw_assets = db["raw_assets"]
 
+        # Find the asset
         asset = raw_assets.find_one({"_id": ObjectId(file_id)})
         if not asset:
+            logger.error(f"File not found: {file_id}")
             raise HTTPException(status_code=404, detail="File not found")
 
-        if not asset.get("processed_paths", {}).get("tables", {}):
+        # Check if file has tables
+        processed_paths = asset.get("processed_paths", {})
+        tables = processed_paths.get("tables", {})
+
+        if not tables:
+            logger.error(f"No tables found for file {file_id}")
             raise HTTPException(status_code=404, detail="No tables found for this file")
 
-        tables = asset["processed_paths"]["tables"]
         if table_name not in tables:
+            logger.error(f"Table {table_name} not found in file {file_id}")
             raise HTTPException(status_code=404, detail="Table not found")
 
-        table_path = tables[table_name]
+        # Get the table paths
+        table_paths = tables[table_name]
+        if not isinstance(table_paths, dict) or "csv" not in table_paths:
+            logger.error(f"Invalid table path structure: {table_paths}")
+            raise HTTPException(status_code=500, detail="Invalid table path structure")
 
-        # Read and return the HTML content
-        with open(table_path, "r") as f:
-            table_content = f.read()
+        csv_path = table_paths["csv"]
 
-        return {"content": table_content}
+        if not os.path.exists(csv_path):
+            logger.error(f"CSV file not found at {csv_path}")
+            raise HTTPException(status_code=404, detail="Table file not found")
+
+        # Read CSV content
+        try:
+            with open(csv_path, "r", encoding="utf-8") as f:
+                content = f.read()
+                logger.debug(f"Successfully read table content ({len(content)} bytes)")
+                return {"content": content}
+        except Exception as e:
+            logger.error(f"Error reading CSV file: {str(e)}")
+            raise HTTPException(status_code=500, detail="Error reading table content")
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error serving table: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@files_router.delete("/files/{file_id}")
-async def delete_file(file_id: str):
-    """Delete a file and its processed contents"""
-    try:
-        logger.debug(f"Attempting to delete file: {file_id}")
-        db = get_db()
-        raw_assets = db["raw_assets"]
-
-        # Get file details
-        asset = raw_assets.find_one({"_id": ObjectId(file_id)})
-        if not asset:
-            raise HTTPException(status_code=404, detail="File not found")
-
-        # Delete raw file
-        raw_file_path = os.path.join("/app", "filestore", "raw", asset["stored_name"])
-        if os.path.exists(raw_file_path):
-            os.remove(raw_file_path)
-
-        # Delete processed files if they exist
-        if asset.get("processed_paths"):
-            processed_dir = os.path.dirname(asset["processed_paths"]["markdown"])
-            if os.path.exists(processed_dir):
-                import shutil
-
-                shutil.rmtree(processed_dir)
-
-        # Delete database record
-        raw_assets.delete_one({"_id": ObjectId(file_id)})
-
-        return {"message": "File deleted successfully"}
-
-    except Exception as e:
-        logger.error(f"Error deleting file: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

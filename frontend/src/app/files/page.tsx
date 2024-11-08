@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import FileRowActions from './file-row-actions';
 import { Badge } from '@/components/ui/badge';
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   AlertDialog,
@@ -31,7 +30,10 @@ const statusColors = {
   uploaded: 'bg-blue-100 text-blue-800',
   processing: 'bg-yellow-100 text-yellow-800',
   complete: 'bg-green-100 text-green-800',
-  error: 'bg-red-100 text-red-800'
+  error: 'bg-red-100 text-red-800',
+  metadata_complete: 'bg-green-100 text-green-800',
+  processing_queued: 'bg-yellow-100 text-yellow-800',
+  unknown: 'bg-gray-100 text-gray-800'
 };
 
 const FileContentModal = ({ isOpen, onClose, file }) => {
@@ -77,6 +79,23 @@ const FileContentModal = ({ isOpen, onClose, file }) => {
         </ScrollArea>
       </DialogContent>
     </Dialog>
+  );
+};
+
+const DocumentTypeBadge = ({ type, subType }) => {
+  if (!type) return null;
+  
+  return (
+    <div className="space-y-1">
+      <Badge variant="secondary" className="capitalize">
+        {type}
+      </Badge>
+      {subType && (
+        <div className="text-xs text-muted-foreground capitalize">
+          {subType}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -186,6 +205,7 @@ export default function FileBrowserPage() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Document Type</TableHead>
                   <TableHead>Size</TableHead>
                   <TableHead>Upload Date</TableHead>
                   <TableHead>Status</TableHead>
@@ -197,6 +217,12 @@ export default function FileBrowserPage() {
                   <TableRow key={file.id}>
                     <TableCell className="font-medium">{file.name}</TableCell>
                     <TableCell>{formatFileType(file.type)}</TableCell>
+                    <TableCell>
+                      <DocumentTypeBadge 
+                        type={file.metadata?.documentMetadata?.primaryType?.category}
+                        subType={file.metadata?.documentMetadata?.primaryType?.subType}
+                      />
+                    </TableCell>
                     <TableCell>{(file.size / 1024).toFixed(2)} KB</TableCell>
                     <TableCell>{new Date(file.upload_date).toLocaleString()}</TableCell>
                     <TableCell>
