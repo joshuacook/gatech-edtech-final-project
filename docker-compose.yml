@@ -71,6 +71,7 @@ services:
       - ./nb:/home/jovyan/nb
       - ./api:/home/jovyan/api
       - ./filestore:/home/jovyan/api/filestore
+      - ./prompts:/home/jovyan/api/prompts
     environment:
       - JUPYTER_ENABLE_LAB=yes
     env_file:
