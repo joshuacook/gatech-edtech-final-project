@@ -5,7 +5,6 @@ import os
 
 import requests
 from jobs.assets.base import AssetProcessor
-from langfuse.decorators import langfuse_context, observe
 from utils.db_utils import update_asset_status
 
 logger = logging.getLogger(__name__)
@@ -20,20 +19,11 @@ class TableMetadataProcessor(AssetProcessor):
     def __init__(self, file_hash: str):
         super().__init__(file_hash)
 
-    @observe(name="asset_processor_table_metadata")
     def process(self):
         """Main processing method"""
         try:
             update_asset_status(self.file_hash, "processing_table_metadata")
             logger.info(f"Starting table metadata processing for {self.file_hash}")
-
-            # Update observation with input info
-            langfuse_context.update_current_observation(
-                input={
-                    "file_hash": self.file_hash,
-                    "file_name": self.asset["original_name"],
-                }
-            )
 
             # Check if there are any tables
             processed_paths = self.asset.get("processed_paths", {})
@@ -108,11 +98,6 @@ class TableMetadataProcessor(AssetProcessor):
                 }
                 self._update_asset(update_data)
 
-                # Update observation with output
-                langfuse_context.update_current_observation(
-                    output={"table_metadata": table_metadata}
-                )
-
             logger.info(f"Completed table metadata processing for {self.file_hash}")
             update_asset_status(self.file_hash, "table_metadata_complete")
             return True
@@ -120,9 +105,6 @@ class TableMetadataProcessor(AssetProcessor):
         except Exception as e:
             logger.error(
                 f"Error processing table metadata for {self.file_hash}: {str(e)}"
-            )
-            langfuse_context.update_current_observation(
-                level="ERROR", metadata={"error": str(e)}
             )
             update_asset_status(self.file_hash, "table_metadata_error", str(e))
             raise

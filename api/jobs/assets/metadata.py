@@ -5,7 +5,6 @@ import os
 
 import requests
 from jobs.assets.base import AssetProcessor
-from langfuse.decorators import langfuse_context, observe
 from utils.db_utils import update_asset_status
 
 logger = logging.getLogger(__name__)
@@ -20,19 +19,11 @@ class MetadataProcessor(AssetProcessor):
     def __init__(self, file_hash: str):
         super().__init__(file_hash)
 
-    @observe(name="asset_processor_metadata")
     def process(self):
         """Extract metadata from processed content"""
         try:
             update_asset_status(self.file_hash, "processing_metadata")
             logger.info(f"Starting metadata extraction for {self.file_hash}")
-
-            langfuse_context.update_current_observation(
-                input={
-                    "file_hash": self.file_hash,
-                    "file_name": self.asset["original_name"],
-                }
-            )
 
             # Get the processed markdown content
             processed_paths = self.asset.get("processed_paths", {})
@@ -86,15 +77,9 @@ class MetadataProcessor(AssetProcessor):
             try:
                 metadata = json.loads(json_str)
                 logger.info(f"Metadata extracted: {metadata}")
-                langfuse_context.update_current_observation(
-                    output={"metadata": metadata}
-                )
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse metadata JSON: {str(e)}")
                 logger.debug(f"Attempted to parse: {json_str}")
-                langfuse_context.update_current_observation(
-                    level="ERROR", metadata={"error": str(e)}
-                )
                 raise
 
             # Save metadata to a file

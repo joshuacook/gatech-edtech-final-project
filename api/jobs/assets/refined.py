@@ -6,7 +6,6 @@ import time
 
 import requests
 from jobs.assets.base import AssetProcessor
-from langfuse.decorators import langfuse_context, observe
 from utils.db_utils import update_asset_status
 
 logger = logging.getLogger(__name__)
@@ -24,32 +23,15 @@ class RefinedProcessor(AssetProcessor):
         self.base_url = "https://www.datalab.to/api/v1/marker"
         self.headers = {"X-Api-Key": self.api_key}
 
-    @observe(name="asset_processor_refined")
     def process(self):
         """Main processing method"""
         try:
             update_asset_status(self.file_hash, "processing_refined")
             logger.info(f"Starting refined processing for {self.file_hash}")
 
-            # Update observation with input info
-            langfuse_context.update_current_observation(
-                input={
-                    "file_hash": self.file_hash,
-                    "file_name": self.asset["original_name"],
-                    "file_type": self.asset["file_type"],
-                }
-            )
-
             # Process with Marker
             initial_data = self._process_file()
             data = self._poll_results(initial_data["request_check_url"])
-
-            langfuse_context.update_current_observation(
-                output={
-                    "markdown": data["markdown"][:1000],  # First 1000 chars for logging
-                    "page_count": data.get("page_count", 1),
-                }
-            )
 
             # Save results
             markdown_path = os.path.join(self.processed_dir, "content.md")
@@ -78,9 +60,6 @@ class RefinedProcessor(AssetProcessor):
         except Exception as e:
             logger.error(
                 f"Error processing refined content for {self.file_hash}: {str(e)}"
-            )
-            langfuse_context.update_current_observation(
-                level="ERROR", metadata={"error": str(e)}
             )
             update_asset_status(self.file_hash, "refined_error", str(e))
             raise

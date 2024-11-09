@@ -7,7 +7,6 @@ from typing import Dict, List, Tuple
 
 from docx import Document
 from jobs.assets.base import AssetProcessor
-from langfuse.decorators import observe
 from utils.db_utils import update_asset_status
 
 logger = logging.getLogger(__name__)
@@ -22,7 +21,6 @@ class TableProcessor(AssetProcessor):
     def __init__(self, file_hash: str):
         super().__init__(file_hash)
 
-    @observe(name="asset_processor_tables")
     def process(self):
         """Main processing method"""
         try:
