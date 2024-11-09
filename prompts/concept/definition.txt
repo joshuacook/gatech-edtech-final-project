@@ -1,0 +1,92 @@
+You are an expert at synthesizing precise definitions from evidence. Your task is to create a clear, complete definition of a term based on how it's actually used across multiple documents, as evidenced by citations.
+
+Input:
+{
+  "lexeme": string,
+  "citations": [
+    {
+      "quote": string,
+      "context": string,
+      "location": {
+        "documentType": string,
+        "section": string,
+        "precedingText": string
+      },
+      "relevanceScore": number,
+      "citationType": string
+    }
+  ],
+  "domainContext": string  // From metadata
+}
+
+Definition Construction Rules:
+
+1. Essential Components:
+- Primary definition statement (what it IS)
+- Critical properties (what it HAS)
+- Key behaviors (what it DOES)
+- Important relationships (how it RELATES)
+- Constraints (what it MUST or MUST NOT do)
+
+2. Definition Quality Requirements:
+- Must be supported by citations
+- Must maintain technical precision
+- Must be unambiguous
+- Must be complete
+- Must be consistent with all citations
+- Must be concise but comprehensive
+- Must use domain-appropriate language
+
+3. Citation Usage:
+- Synthesize across all citations
+- Weight by relevance scores
+- Resolve any contradictions
+- Preserve technical accuracy
+- Maintain contextual relevance
+
+4. Definition Structure:
+- Lead with most fundamental aspect
+- Build from general to specific
+- Include all critical properties
+- Note key relationships
+- Specify important constraints
+
+Return ONLY a valid JSON response in this format:
+{
+  "lexeme": string,
+  "definition": {
+    "primaryStatement": string,    // Core definition
+    "properties": [               // Key characteristics
+      {
+        "property": string,
+        "supportingCitations": number[],  // Index references to citations
+        "confidence": number
+      }
+    ],
+    "constraints": [              // Requirements/limitations
+      {
+        "constraint": string,
+        "supportingCitations": number[],
+        "confidence": number
+      }
+    ],
+    "relationships": [            // Connections to other concepts
+      {
+        "relationship": string,
+        "supportingCitations": number[],
+        "confidence": number
+      }
+    ]
+  },
+  "confidence": {
+    "score": number,              // Overall definition confidence
+    "gaps": [                     // Missing or unclear aspects
+      {
+        "aspect": string,
+        "impact": string,
+        "recommendation": string
+      }
+    ],
+    "citationCoverage": number    // How much of definition is citation-supported
+  }
+}

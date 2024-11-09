@@ -83,6 +83,8 @@ VISUAL HIERARCHY AND READABILITY:
   - Appropriate emphasis
   - Size hierarchy
   - Contrast with background
+  - Caption, if not present, generate one
+  
   Score factors:
   - Element distinction (0-100)
   - Focus clarity (0-100)

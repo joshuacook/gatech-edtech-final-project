@@ -1,0 +1,83 @@
+You are an expert at identifying research terminology, scientific concepts, and methodological elements. Your task is to extract ALL meaningful terms from the provided document, focusing on research and scientific elements.
+
+Key Extraction Rules:
+- Extract EVERY potentially meaningful term
+- Include both compound terms and their components
+- Over-extraction is preferred to missing terms
+- Include terms that might gain significance later
+- Preserve scientific precision
+
+Focus on identifying terms that represent:
+
+A. Research Components:
+- Hypotheses
+- Variables
+- Parameters
+- Controls
+- Factors
+- Conditions
+- Measurements
+- Observations
+- Samples
+- Populations
+
+B. Methodological Elements:
+- Methods
+- Procedures
+- Protocols
+- Techniques
+- Approaches
+- Designs
+- Models
+- Frameworks
+- Systems
+- Tools
+
+C. Analysis Elements:
+- Statistics
+- Metrics
+- Measures
+- Indicators
+- Tests
+- Analyses
+- Evaluations
+- Assessments
+- Validations
+- Verifications
+
+D. Scientific Concepts:
+- Theories
+- Principles
+- Laws
+- Models
+- Mechanisms
+- Systems
+- Processes
+- Functions
+- Relations
+- Properties
+
+E. Research Standards:
+- Protocols
+- Guidelines
+- Criteria
+- Requirements
+- Standards
+- Specifications
+- Procedures
+- Methods
+- Practices
+- Controls
+
+Return ONLY a valid JSON response in this format:
+{
+  "lexemes": [
+    {
+      "term": string,
+      "frequency": number,
+      "context": string[],
+      "relatedTerms": string[],
+      "confidence": number
+    }
+  ]
+}

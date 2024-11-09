@@ -81,6 +81,7 @@ Minimum Context Requirements:
   - Time period if applicable
   - Units/measures used
   - Data source if relevant
+  - If no title is present, generate one
 
 2. In-text References:
   - Introduction or lead-in
@@ -146,7 +147,110 @@ Structure Enhancement:
 
 Analyze the table and provide analysis in this JSON format:
 
-[JSON schema as previously defined]
+{
+  "summary": string,
+  "tableMetadata": {
+    "id": string,
+    "title": string?,
+    "caption": string?,
+    "location": string,
+    "references": [{
+      "type": "in_text|figure|other_table",
+      "location": string,
+      "context": string
+    }],
+    "context": {
+      "section": string,
+      "precedingContext": string,
+      "followingContext": string,
+      "topic": string
+    }
+  },
+  "extractionQuality": {
+    "overallScore": number,  // 0-100
+    "confidence": number,
+    "issues": [{
+      "type": "cell_merger|border_detection|header_recognition|content_splitting",
+      "severity": number,
+      "location": string,
+      "description": string
+    }],
+    "structuralIntegrity": {
+      "rowConsistency": number,
+      "columnAlignment": number,
+      "headerPreservation": number,
+      "spanHandling": number
+    }
+  },
+  "headerAnalysis": {
+    "completeness": {
+      "score": number,
+      "missingHeaders": [{
+        "location": string,
+        "impact": "critical|major|minor",
+        "suggestion": string
+      }]
+    },
+    "clarity": {
+      "score": number,
+      "issues": [{
+        "type": "ambiguous|truncated|compound|unlabeled",
+        "location": string,
+        "suggestion": string
+      }]
+    },
+    "hierarchy": {
+      "detected": boolean,
+      "levels": number,
+      "quality": number,
+      "issues": [string]
+    }
+  },
+  "signalQuality": {
+    "informationValue": number,
+    "uniqueness": number,
+    "relevance": number,
+    "comprehensibility": {
+      "score": number,
+      "issues": [{
+        "type": "context_needed|unclear_labels|missing_units|undefined_abbreviations",
+        "description": string,
+        "suggestion": string
+      }]
+    },
+    "issues": [{
+      "type": "redundant_data|low_value|missing_context|inconsistent_data",
+      "description": string,
+      "suggestion": string
+    }]
+  },
+  "structure": {
+    "dimensions": {
+      "rows": number,
+      "columns": number,
+      "headerRows": number,
+      "headerColumns": number
+    },
+    "cellTypes": [{
+      "type": "numeric|text|date|mixed",
+      "columns": [string],
+      "format": string?
+    }],
+    "relationships": [{
+      "type": "hierarchy|grouping|calculation",
+      "description": string,
+      "cells": [string]
+    }],
+    "readability": {
+      "score": number,
+      "issues": [{
+        "type": "dense_content|poor_spacing|awkward_breaks|visual_clarity",
+        "location": string,
+        "suggestion": string
+      }]
+    }
+  }
+}
 
 When analyzing tables:
 1. First assess the table type and apply appropriate expectations

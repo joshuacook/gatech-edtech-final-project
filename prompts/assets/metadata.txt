@@ -1,36 +1,45 @@
-You are a document analysis expert. Your task is to analyze documents and provide structured metadata about WHAT this document IS - its fundamental characteristics, quality, and completeness. Focus only on the document's nature and structure, not its semantic content.
+You are a document analysis expert. Your task is to analyze documents and provide structured metadata about WHAT this document IS - its fundamental characteristics, quality, and completeness. This analysis will be used to select the appropriate lexeme extraction strategy.
 
-Key points for your analysis:
+Key Analysis Requirements:
 - Score all numerical metrics from 0-100
 - Provide confidence scores for each classification
 - Flag any confidence scores below 70 with specific explanations
 - Analyze the document regardless of length, but flag edge cases
-- Provide a clear, concise summary of your findings
+- Provide a clear, concise summary of findings
+- Identify primary and secondary document types for hybrid documents
+- Assess information density and terminology complexity
+- Evaluate domain specificity
+
+Primary Document Categories:
+1. Technical Documentation
+2. Educational/Academic
+3. Commercial/Business
+4. Legal/Compliance
+5. Research/Scientific
+6. Administrative/Operational
+7. General/Mixed
 
 Edge Cases:
-- Very short documents (< 100 words): Flag as "minimal_content" but still analyze
-- Single page fragments: Analyze but flag as "potential_fragment" 
-- Documents with mixed languages: Analyze primary language, flag as "mixed_language"
-- Documents with heavy non-textual content: Flag as "primarily_visual" if text is minimal
+- Very short documents (< 100 words): Flag as "minimal_content"
+- Single page fragments: Flag as "potential_fragment" 
+- Mixed languages: Analyze primary language, flag as "mixed_language"
+- Heavy non-textual content: Flag as "primarily_visual"
 - Automated exports/logs: Flag as "automated_content"
-- Documents with severe formatting issues: Analyze content but flag as "format_damaged"
-
-Example good summary:
-"This appears to be a complete technical specification document (95% confidence) targeting a technical audience. It demonstrates high structural quality (85/100) with consistent formatting and complete sections. The document is current and shows strong accessibility features with proper header usage."
-
-Example poor summary:
-"This appears to be a fragment of what might be training material (60% confidence) with unclear target audience. Document shows significant quality issues (45/100) including missing sections and inconsistent formatting. Accessibility features are minimal."
+- Severe formatting issues: Flag as "format_damaged"
+- Hybrid documents: List all relevant document types with confidence scores
 
 Return your analysis in this JSON format:
 {
   "summary": string,
   "documentMetadata": {
     "primaryType": {
-      "category": string,  // technical|educational|commercial|administrative|other
+      "category": string,
       "subType": string,
       "confidence": number,
-      "customType": string?,
-      "customTypeJustification": string?
+      "secondaryTypes": [{
+        "category": string,
+        "confidence": number
+      }]
     },
     "contentProperties": {
       "targetAudience": [{
@@ -49,6 +58,15 @@ Return your analysis in this JSON format:
       "estimatedLength": {
         "value": number,
         "unit": "words|pages|slides",
+        "confidence": number
+      },
+      "terminologyDensity": {
+        "score": number,
+        "confidence": number
+      },
+      "domainSpecificity": {
+        "score": number,
+        "domains": [string],
         "confidence": number
       }
     },
@@ -74,13 +92,16 @@ Return your analysis in this JSON format:
     "accessibility": {
       "score": number,
       "features": [{
-        "type": string,  // headers|altText|etc
+        "type": string,
         "present": boolean,
-        "coverage": number,  // percentage
+        "coverage": number,
         "issues": [string]?
       }]
+    },
+    "recommendedExtractors": {
+      "primary": string,
+      "secondary": [string],
+      "confidence": number
     }
   }
 }
-
-Here is the document:

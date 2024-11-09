@@ -163,9 +163,11 @@ class AssetProcessor:
     @classmethod
     def get_processor_registry(cls) -> Dict[str, Type["AssetProcessor"]]:
         """Get registry of all processor types"""
+        from jobs.assets.image_metadata import ImageMetadataProcessor
         from jobs.assets.images import ImageProcessor
         from jobs.assets.metadata import MetadataProcessor
         from jobs.assets.refined import RefinedProcessor
+        from jobs.assets.table_metadata import TableMetadataProcessor
         from jobs.assets.tables import TableProcessor
 
         return {
@@ -173,6 +175,8 @@ class AssetProcessor:
             "images": ImageProcessor,
             "refined": RefinedProcessor,
             "metadata": MetadataProcessor,
+            "table_metadata": TableMetadataProcessor,
+            "image_metadata": ImageMetadataProcessor,
         }
 
     @classmethod
