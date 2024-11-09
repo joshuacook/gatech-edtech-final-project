@@ -13,23 +13,19 @@ from routers.relationships import relationships_router
 from utils.langfuse_utils import configure_langfuse
 from utils.logging_utils import configure_logging
 
-# Create logger for this module
 logger = logging.getLogger(__name__)
 
 app = fastapi.FastAPI()
 
 
-# Configure logging on startup
 @app.on_event("startup")
 async def startup_event():
     configure_langfuse()
-    # Set initial logging level from environment variable
     initial_level = os.getenv("LOG_LEVEL", "INFO")
     result = configure_logging(initial_level)
     logger.info(result)
 
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

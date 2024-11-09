@@ -1,59 +1,18 @@
 import logging
-import os
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
 import networkx as nx
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from pymongo import MongoClient
+from models.relationships import (Relationship, RelationshipCreate,
+                                  RelationshipMetrics, RelationshipUpdate)
+from services.database import get_db
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-class RelationshipCreate(BaseModel):
-    source: str
-    target: str
-    type: str
-    connection_type: Optional[str] = None
-    strength: float
-
-
-class RelationshipUpdate(BaseModel):
-    type: Optional[str] = None
-    connection_type: Optional[str] = None
-    strength: Optional[float] = None
-
-
-class Relationship(BaseModel):
-    source: str
-    target: str
-    type: str
-    connection_type: Optional[str]
-    strength: float
-    created_at: str
-
-
-class RelationshipMetrics(BaseModel):
-    total_relationships: int
-    average_strength: float
-    network_density: float
-
-
 relationships_router = APIRouter()
-
-
-def get_db():
-    try:
-        client = MongoClient(os.getenv("MONGODB_URI", "mongodb://db:27017/"))
-        db = client["chelle"]
-        client.admin.command("ping")
-        logger.debug("Successfully connected to MongoDB")
-        return db
-    except Exception as e:
-        logger.error(f"Failed to connect to MongoDB: {str(e)}")
-        raise HTTPException(status_code=500, detail="Database connection failed")
 
 
 @relationships_router.get("/relationships", response_model=List[Relationship])
@@ -62,6 +21,8 @@ async def get_relationships():
     try:
         logger.debug("Attempting to fetch relationships from MongoDB")
         db = get_db()
+        if isinstance(db, dict) and "error" in db:
+            raise HTTPException(status_code=500, detail=db["error"])
         relationships_collection = db["relationships"]
 
         relationships = []
@@ -92,9 +53,10 @@ async def create_relationship(relationship: RelationshipCreate):
             f"Attempting to create relationship between {relationship.source} and {relationship.target}"
         )
         db = get_db()
+        if isinstance(db, dict) and "error" in db:
+            raise HTTPException(status_code=500, detail=db["error"])
         relationships_collection = db["relationships"]
 
-        # Check if relationship already exists
         existing = relationships_collection.find_one(
             {
                 "$or": [
@@ -131,6 +93,8 @@ async def get_relationship_metrics():
     try:
         logger.debug("Calculating relationship metrics")
         db = get_db()
+        if isinstance(db, dict) and "error" in db:
+            raise HTTPException(status_code=500, detail=db["error"])
         relationships_collection = db["relationships"]
 
         relationships = list(relationships_collection.find())
@@ -140,12 +104,10 @@ async def get_relationship_metrics():
                 total_relationships=0, average_strength=0.0, network_density=0.0
             )
 
-        # Create networkx graph
         G = nx.Graph()
         for rel in relationships:
             G.add_edge(rel["source"], rel["target"], weight=rel["strength"])
 
-        # Calculate metrics
         total = len(relationships)
         avg_strength = sum(rel["strength"] for rel in relationships) / total
         density = nx.density(G)
@@ -171,6 +133,8 @@ async def update_relationship(
     try:
         logger.debug(f"Attempting to update relationship between {source} and {target}")
         db = get_db()
+        if isinstance(db, dict) and "error" in db:
+            raise HTTPException(status_code=500, detail=db["error"])
         relationships_collection = db["relationships"]
 
         update_data = {
@@ -216,6 +180,8 @@ async def delete_relationship(source: str, target: str):
     try:
         logger.debug(f"Attempting to delete relationship between {source} and {target}")
         db = get_db()
+        if isinstance(db, dict) and "error" in db:
+            raise HTTPException(status_code=500, detail=db["error"])
         relationships_collection = db["relationships"]
 
         result = relationships_collection.delete_one(

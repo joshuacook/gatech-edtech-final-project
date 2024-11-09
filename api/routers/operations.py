@@ -1,113 +1,27 @@
 import logging
-import os
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from typing import List
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from pymongo import MongoClient
+from models.operations import (Implementation, ImplementationCreate, Procedure,
+                               ProcedureCreate, Tool, ToolCreate)
+from services.database import get_db
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-# Pydantic models for implementations
-class ImplementationDetail(BaseModel):
-    key: str
-    value: str
-
-
-class ImplementationCreate(BaseModel):
-    name: str
-    type: str
-    description: str
-    details: Dict[str, str]
-    concept: str
-    status: str
-
-
-class ImplementationUpdate(BaseModel):
-    type: Optional[str] = None
-    description: Optional[str] = None
-    details: Optional[Dict[str, str]] = None
-    concept: Optional[str] = None
-    status: Optional[str] = None
-
-
-class Implementation(ImplementationCreate):
-    created_at: str
-
-
-# Pydantic models for procedures
-class ProcedureStep(BaseModel):
-    order: int
-    description: str
-    expected_duration: str
-
-
-class ProcedureCreate(BaseModel):
-    name: str
-    description: str
-    steps: List[ProcedureStep]
-    concept: str
-    status: str
-
-
-class ProcedureUpdate(BaseModel):
-    description: Optional[str] = None
-    steps: Optional[List[ProcedureStep]] = None
-    concept: Optional[str] = None
-    status: Optional[str] = None
-
-
-class Procedure(ProcedureCreate):
-    created_at: str
-
-
-# Pydantic models for tools
-class ToolCreate(BaseModel):
-    name: str
-    purpose: str
-    type: str
-    concepts: List[str]
-    integration_details: Optional[Dict[str, Union[str, List[str]]]] = None
-    status: str
-
-
-class ToolUpdate(BaseModel):
-    purpose: Optional[str] = None
-    type: Optional[str] = None
-    concepts: Optional[List[str]] = None
-    integration_details: Optional[Dict[str, Union[str, List[str]]]] = None
-    status: Optional[str] = None
-
-
-class Tool(ToolCreate):
-    created_at: str
-
-
 operations_router = APIRouter()
 
 
-def get_db():
-    try:
-        client = MongoClient(os.getenv("MONGODB_URI", "mongodb://db:27017/"))
-        db = client["chelle"]
-        client.admin.command("ping")
-        logger.debug("Successfully connected to MongoDB")
-        return db
-    except Exception as e:
-        logger.error(f"Failed to connect to MongoDB: {str(e)}")
-        raise HTTPException(status_code=500, detail="Database connection failed")
-
-
-# Implementation endpoints
 @operations_router.get("/implementations", response_model=List[Implementation])
 async def get_implementations():
     """Get all implementations"""
     try:
         logger.debug("Fetching all implementations")
         db = get_db()
+        if isinstance(db, dict) and "error" in db:
+            raise HTTPException(status_code=500, detail=db["error"])
         implementations = list(db["implementations"].find())
         return implementations
     except Exception as e:
@@ -121,12 +35,12 @@ async def create_implementation(implementation: ImplementationCreate):
     try:
         logger.debug(f"Creating implementation: {implementation.name}")
         db = get_db()
+        if isinstance(db, dict) and "error" in db:
+            raise HTTPException(status_code=500, detail=db["error"])
 
-        # Check if implementation already exists
         if db["implementations"].find_one({"name": implementation.name}):
             raise HTTPException(status_code=400, detail="Implementation already exists")
 
-        # Verify concept exists
         if not db["concepts"].find_one({"name": implementation.concept}):
             raise HTTPException(
                 status_code=400, detail="Referenced concept does not exist"
@@ -154,6 +68,8 @@ async def get_implementation(name: str):
     try:
         logger.debug(f"Fetching implementation: {name}")
         db = get_db()
+        if isinstance(db, dict) and "error" in db:
+            raise HTTPException(status_code=500, detail=db["error"])
         implementation = db["implementations"].find_one({"name": name})
         if not implementation:
             raise HTTPException(status_code=404, detail="Implementation not found")
@@ -166,13 +82,14 @@ async def get_implementation(name: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Procedure endpoints
 @operations_router.get("/procedures", response_model=List[Procedure])
 async def get_procedures():
     """Get all procedures"""
     try:
         logger.debug("Fetching all procedures")
         db = get_db()
+        if isinstance(db, dict) and "error" in db:
+            raise HTTPException(status_code=500, detail=db["error"])
         procedures = list(db["procedures"].find())
         for proc in procedures:
             proc.pop("_id")
@@ -188,6 +105,8 @@ async def create_procedure(procedure: ProcedureCreate):
     try:
         logger.debug(f"Creating procedure: {procedure.name}")
         db = get_db()
+        if isinstance(db, dict) and "error" in db:
+            raise HTTPException(status_code=500, detail=db["error"])
 
         if db["procedures"].find_one({"name": procedure.name}):
             raise HTTPException(status_code=400, detail="Procedure already exists")
@@ -211,13 +130,14 @@ async def create_procedure(procedure: ProcedureCreate):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Tool endpoints
 @operations_router.get("/tools", response_model=List[Tool])
 async def get_tools():
     """Get all tools"""
     try:
         logger.debug("Fetching all tools")
         db = get_db()
+        if isinstance(db, dict) and "error" in db:
+            raise HTTPException(status_code=500, detail=db["error"])
         tools = list(db["tools"].find())
         for tool in tools:
             tool.pop("_id")
@@ -233,11 +153,12 @@ async def create_tool(tool: ToolCreate):
     try:
         logger.debug(f"Creating tool: {tool.name}")
         db = get_db()
+        if isinstance(db, dict) and "error" in db:
+            raise HTTPException(status_code=500, detail=db["error"])
 
         if db["tools"].find_one({"name": tool.name}):
             raise HTTPException(status_code=400, detail="Tool already exists")
 
-        # Verify all referenced concepts exist
         for concept in tool.concepts:
             if not db["concepts"].find_one({"name": concept}):
                 raise HTTPException(
@@ -259,29 +180,26 @@ async def create_tool(tool: ToolCreate):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Get operations by concept
 @operations_router.get("/concepts/{concept_name}/operations")
 async def get_operations_by_concept(concept_name: str):
     """Get all operational elements related to a specific concept"""
     try:
         logger.debug(f"Fetching operations for concept: {concept_name}")
         db = get_db()
+        if isinstance(db, dict) and "error" in db:
+            raise HTTPException(status_code=500, detail=db["error"])
 
-        # Verify concept exists
         if not db["concepts"].find_one({"name": concept_name}):
             raise HTTPException(status_code=404, detail="Concept not found")
 
-        # Get related implementations
         implementations = list(db["implementations"].find({"concept": concept_name}))
         for impl in implementations:
             impl.pop("_id")
 
-        # Get related procedures
         procedures = list(db["procedures"].find({"concept": concept_name}))
         for proc in procedures:
             proc.pop("_id")
 
-        # Get related tools
         tools = list(db["tools"].find({"concepts": concept_name}))
         for tool in tools:
             tool.pop("_id")

@@ -1,38 +1,14 @@
 import logging
 import os
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from models.concepts import Concept, ConceptCreate, ConceptUpdate
 from pymongo import MongoClient
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
-
-
-class ConceptCreate(BaseModel):
-    name: str
-    definition: str
-    citations: List[str]
-    synonyms: List[str]
-    understanding_level: str
-
-
-class ConceptUpdate(BaseModel):
-    definition: Optional[str] = None
-    citations: Optional[List[str]] = None
-    synonyms: Optional[List[str]] = None
-    understanding_level: Optional[str] = None
-
-
-class Concept(BaseModel):
-    name: str
-    definition: str
-    citations: List[str]
-    synonyms: List[str]
-    understanding_level: str
-    created_at: str
 
 
 concepts_router = APIRouter()
@@ -58,11 +34,9 @@ async def get_concepts():
         db = get_db()
         concepts_collection = db["concepts"]
 
-        # Log the count of documents
         count = concepts_collection.count_documents({})
         logger.debug(f"Found {count} concepts in database")
 
-        # Fetch and log the concepts
         concepts = []
         for concept in concepts_collection.find():
             logger.debug(f"Processing concept: {concept.get('name', 'unknown')}")
