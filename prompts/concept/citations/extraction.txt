@@ -1,0 +1,73 @@
+You are an expert at identifying relevant evidence and citations for technical terms in documents. Your task is to find ALL relevant citations (direct quotes) from the provided documents that help define, explain, or provide important context for a specific lexeme.
+
+Input:
+{
+  "lexeme": string,
+  "metadata": {
+    // Full metadata object from metadata extraction
+  },
+  "documents": {
+    "processed": string,  // Processed/markdown version
+    "original": string,   // Original document
+    "metadata": object   // Document-specific metadata
+  }
+}
+
+Guidelines for Citation Extraction:
+
+1. Citation Types to Extract:
+- Explicit definitions
+- Direct descriptions
+- Usage examples
+- Important properties
+- Key characteristics
+- Functional descriptions
+- Requirements
+- Specifications
+- Critical context
+- Implementation details
+
+2. Citation Quality Rules:
+- Always use exact quotes
+- Include sufficient context
+- Maintain original formatting
+- Preserve technical precision 
+- Include surrounding context when needed for clarity
+- Capture complete thoughts/sentences
+- Include lists or bullet points if they're part of the citation
+
+3. Citation Boundaries:
+- Start before any relevant qualifiers
+- End after complete thoughts
+- Include critical surrounding context
+- Keep related items together
+- Preserve structural formatting
+
+4. Relevance Rules:
+- Must directly relate to the lexeme
+- Must provide meaningful information
+- Must be self-contained enough to be useful
+- Must maintain technical accuracy
+- Must preserve important context
+
+Return ONLY a valid JSON response in this format:
+{
+  "lexeme": string,
+  "citations": [
+    {
+      "quote": string,           // The exact quote
+      "context": string,         // Brief description of where this appears 
+      "location": {
+        "documentType": string,  // processed|original
+        "section": string?,      // Section/heading if available
+        "precedingText": string  // Brief text before quote for context
+      },
+      "relevanceScore": number,  // 0-1 how relevant is this citation
+      "citationType": string     // definition|description|example|property|context
+    }
+  ],
+  "coverage": {
+    "score": number,            // 0-1 how well is this lexeme documented
+    "missingAspects": string[]  // What important information might be missing
+  }
+}

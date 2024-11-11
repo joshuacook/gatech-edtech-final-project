@@ -1,0 +1,195 @@
+# Term Normalization Rules
+
+## Basic String Normalization
+```javascript
+function normalizeBasic(term) {
+  return term
+    .toLowerCase()                          // Convert to lowercase
+    .trim()                                // Remove leading/trailing whitespace
+    .replace(/\s+/g, ' ')                  // Normalize internal whitespace
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '') // Remove basic punctuation
+}
+```
+
+## Common Variations Patterns
+
+1. Hyphenation/Spacing Variations:
+```javascript
+// Normalize hyphenation and spacing
+function normalizeHyphenation(term) {
+  // data-base, data base, database -> database
+  return term.replace(/\s+|-+/g, '')
+}
+
+// Examples:
+// "machine-learning" = "machine learning" = "machinelearning"
+// "back-end" = "back end" = "backend"
+// "front-end" = "front end" = "frontend"
+```
+
+2. Common Technical Variations:
+```javascript
+const technicalVariations = {
+  'api': ['apis', 'api\'s', 'application program interface', 'application programming interface'],
+  'ui': ['user interface', 'user-interface'],
+  'ux': ['user experience', 'user-experience'],
+  'db': ['database', 'data-base', 'data base'],
+  'id': ['identifier', 'identification'],
+  'auth': ['authentication', 'authorization'],
+  'config': ['configuration'],
+  'spec': ['specification'],
+  'doc': ['documentation', 'document'],
+  'app': ['application'],
+  'admin': ['administrator', 'administration']
+}
+```
+
+3. Plural/Singular Forms:
+```javascript
+function normalizePlural(term) {
+  // Basic plural rules
+  return term
+    .replace(/([^s])s$/, '$1')      // Remove trailing 's'
+    .replace(/ies$/, 'y')           // activities -> activity
+    .replace(/es$/, '')             // matches -> match
+    .replace(/([^s])ses$/, '$1s')   // analyses -> analysis
+}
+```
+
+4. Common Prefixes/Suffixes:
+```javascript
+const commonPrefixes = [
+  'pre', 'post', 'sub', 'super', 'inter', 'intra', 'multi', 'non'
+]
+
+const commonSuffixes = [
+  'able', 'ible', 'al', 'ial', 'ed', 'ing', 'ion', 'tion', 'ation', 
+  'ment', 'ness', 'ity', 'ize', 'ise'
+]
+```
+
+5. Domain-Specific Equivalents:
+```javascript
+const domainEquivalents = {
+  technical: {
+    'endpoint': ['api endpoint', 'service endpoint', 'api-endpoint'],
+    'backend': ['back-end', 'back end', 'server-side'],
+    'frontend': ['front-end', 'front end', 'client-side']
+  },
+  business: {
+    'kpi': ['key performance indicator', 'performance indicator', 'metric'],
+    'roi': ['return on investment', 'investment return'],
+    'b2b': ['business to business', 'business-to-business']
+  },
+  academic: {
+    'prereq': ['prerequisite', 'pre-requisite', 'pre requisite'],
+    'eval': ['evaluation', 'assessment', 'examination']
+  }
+}
+```
+
+## Term Matching Algorithm
+```javascript
+function areTermsEquivalent(term1, term2, domain = null) {
+  // 1. Basic normalization
+  const norm1 = normalizeBasic(term1);
+  const norm2 = normalizeBasic(term2);
+  
+  if (norm1 === norm2) return true;
+  
+  // 2. Check hyphenation/spacing variations
+  if (normalizeHyphenation(norm1) === normalizeHyphenation(norm2)) return true;
+  
+  // 3. Check technical variations
+  for (const [standard, variations] of Object.entries(technicalVariations)) {
+    if ((variations.includes(norm1) && variations.includes(norm2)) ||
+        (variations.includes(norm1) && norm2 === standard) ||
+        (variations.includes(norm2) && norm1 === standard)) {
+      return true;
+    }
+  }
+  
+  // 4. Check plural/singular forms
+  if (normalizePlural(norm1) === normalizePlural(norm2)) return true;
+  
+  // 5. Check domain-specific equivalents if domain is provided
+  if (domain && domainEquivalents[domain]) {
+    for (const [standard, variations] of Object.entries(domainEquivalents[domain])) {
+      if ((variations.includes(norm1) && variations.includes(norm2)) ||
+          (variations.includes(norm1) && norm2 === standard) ||
+          (variations.includes(norm2) && norm1 === standard)) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+```
+
+## Fuzzy Matching (for similar terms)
+```javascript
+function getSimilarity(term1, term2) {
+  // Levenshtein distance implementation
+  // Returns similarity score between 0 and 1
+  // Useful for finding potential matches that need human review
+  const maxLength = Math.max(term1.length, term2.length);
+  const distance = levenshteinDistance(term1, term2);
+  return 1 - (distance / maxLength);
+}
+
+const SIMILARITY_THRESHOLD = 0.85; // Adjust based on needs
+```
+
+## Usage Example
+```javascript
+function mergeLexemeTerms(lexemes) {
+  const mergedTerms = new Map();
+  
+  for (const lexeme of lexemes) {
+    let found = false;
+    
+    for (const [existingTerm, existingLexeme] of mergedTerms) {
+      if (areTermsEquivalent(lexeme.term, existingTerm)) {
+        // Merge lexeme data
+        existingLexeme.frequency += lexeme.frequency;
+        existingLexeme.context.push(...lexeme.context);
+        existingLexeme.relatedTerms.push(...lexeme.relatedTerms);
+        found = true;
+        break;
+      }
+      
+      // Optional: Check for similar terms that might need review
+      const similarity = getSimilarity(
+        normalizeBasic(lexeme.term), 
+        normalizeBasic(existingTerm)
+      );
+      if (similarity > SIMILARITY_THRESHOLD) {
+        console.log(`Possible match: ${lexeme.term} ~ ${existingTerm}`);
+      }
+    }
+    
+    if (!found) {
+      mergedTerms.set(lexeme.term, {...lexeme});
+    }
+  }
+  
+  return Array.from(mergedTerms.values());
+}
+```
+
+## Important Considerations
+1. Case-sensitivity handling
+2. Domain-specific terminology preservation
+3. Abbreviation handling
+4. Context awareness
+5. False positive prevention
+6. Performance optimization for large datasets
+7. Handling of compound terms
+8. Language-specific rules
+
+Would you like me to:
+1. Add more domain-specific equivalents?
+2. Enhance the fuzzy matching algorithm?
+3. Add validation rules for merged terms?
+4. Add handling for specific edge cases?

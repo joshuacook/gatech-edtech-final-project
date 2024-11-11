@@ -14,7 +14,7 @@ class TableMetadataProcessor(AssetProcessor):
     """Process metadata for extracted tables using AI analysis"""
 
     processor_type = "table_metadata"
-    dependencies = ["tables"]  # Depends on table extraction
+    dependencies = ["tables"]
 
     def __init__(self, file_hash: str):
         super().__init__(file_hash)
@@ -25,7 +25,6 @@ class TableMetadataProcessor(AssetProcessor):
             update_asset_status(self.file_hash, "processing_table_metadata")
             logger.info(f"Starting table metadata processing for {self.file_hash}")
 
-            # Check if there are any tables
             processed_paths = self.asset.get("processed_paths", {})
             tables = processed_paths.get("tables", {})
 
@@ -36,15 +35,12 @@ class TableMetadataProcessor(AssetProcessor):
 
             table_metadata = {}
 
-            # Read the prompt template
             prompts_dir = os.path.join("/app", "prompts", "assets", "table")
             with open(os.path.join(prompts_dir, "metadata.txt"), "r") as f:
                 prompt_template = f.read()
 
-            # Process each table
             for table_name, paths in tables.items():
                 try:
-                    # Get table content
                     csv_path = paths.get("csv")
                     if not csv_path or not os.path.exists(csv_path):
                         continue
@@ -52,10 +48,8 @@ class TableMetadataProcessor(AssetProcessor):
                     with open(csv_path, "r", encoding="utf-8") as f:
                         table_content = f.read()
 
-                    # Prepare prompt
                     prompt = f"{prompt_template}\n\nTable Content:\n{table_content}"
 
-                    # Call chat API for analysis
                     response = requests.post(
                         "http://api:8000/chat", json={"query": prompt, "messages": []}
                     )
@@ -63,11 +57,9 @@ class TableMetadataProcessor(AssetProcessor):
                     if not response.ok:
                         raise Exception(f"Chat API error: {response.status_code}")
 
-                    # Parse response
                     chat_response = response.json()
                     response_text = chat_response["message"]
 
-                    # Extract JSON from response
                     json_start = response_text.find("{")
                     json_end = response_text.rfind("}") + 1
 
@@ -81,7 +73,6 @@ class TableMetadataProcessor(AssetProcessor):
                     logger.error(f"Error processing table {table_name}: {str(e)}")
                     continue
 
-            # Save metadata
             if table_metadata:
                 metadata_path = os.path.join(
                     self.processed_dir, "tables", "table_metadata.json"
@@ -91,7 +82,6 @@ class TableMetadataProcessor(AssetProcessor):
                 with open(metadata_path, "w", encoding="utf-8") as f:
                     json.dump(table_metadata, f, ensure_ascii=False, indent=2)
 
-                # Update asset record
                 update_data = {
                     "processed_paths.table_metadata": metadata_path,
                     "table_metadata": table_metadata,  # Store in document for easy access

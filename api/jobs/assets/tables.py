@@ -16,7 +16,7 @@ class TableProcessor(AssetProcessor):
     """Process tables from DOCX files"""
 
     processor_type = "tables"
-    dependencies = []  # No dependencies - works directly with raw file
+    dependencies = []
 
     def __init__(self, file_hash: str):
         super().__init__(file_hash)
@@ -24,7 +24,6 @@ class TableProcessor(AssetProcessor):
     def process(self):
         """Main processing method"""
         try:
-            # Check if file is a DOCX
             if (
                 self.asset["file_type"]
                 != "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -38,17 +37,13 @@ class TableProcessor(AssetProcessor):
             update_asset_status(self.file_hash, "processing_tables")
             logger.info(f"Starting table processing for {self.file_hash}")
 
-            # Create the Document object
             doc = Document(self.get_raw_file_path())
 
-            # Create tables directory
             tables_dir = os.path.join(self.processed_dir, "tables")
             os.makedirs(tables_dir, exist_ok=True)
 
-            # Process the tables
             table_paths, tables_meta = self._process_tables(doc, tables_dir)
 
-            # Update asset record
             update_data = {
                 "has_tables": len(table_paths) > 0,
                 "table_count": len(table_paths),
@@ -75,13 +70,10 @@ class TableProcessor(AssetProcessor):
             for row_idx, row in enumerate(table.rows):
                 row_data = []
                 for cell_idx, cell in enumerate(row.cells):
-                    # Clean and normalize cell text
                     text = cell.text.strip()
-                    # Replace multiple spaces/newlines with single space
                     text = " ".join(text.split())
                     row_data.append(text)
 
-                # Only add non-empty rows
                 if any(cell for cell in row_data):
                     table_data.append(row_data)
 
@@ -104,7 +96,6 @@ class TableProcessor(AssetProcessor):
                     table_name = f"table_{i}"
                     logger.debug(f"Processing {table_name}")
 
-                    # Extract and validate table data
                     table_data = self._extract_table(table)
 
                     if not table_data or not any(
@@ -113,17 +104,14 @@ class TableProcessor(AssetProcessor):
                         logger.debug(f"Skipping empty table: {table_name}")
                         continue
 
-                    # Save table as CSV
                     csv_path = os.path.join(tables_dir, f"{table_name}.csv")
                     with open(csv_path, "w", newline="", encoding="utf-8") as f:
                         writer = csv.writer(f)
                         writer.writerows(table_data)
 
-                    # Generate and save table HTML
                     html_path = os.path.join(tables_dir, f"{table_name}.html")
                     self._save_table_html(table_data, html_path)
 
-                    # Store paths and metadata
                     table_paths[table_name] = {"csv": csv_path, "html": html_path}
 
                     tables_meta[table_name] = {
@@ -138,7 +126,6 @@ class TableProcessor(AssetProcessor):
                     logger.error(f"Error processing table {i}: {str(e)}")
                     continue
 
-            # Save metadata
             meta_path = os.path.join(tables_dir, "tables_meta.json")
             with open(meta_path, "w", encoding="utf-8") as f:
                 json.dump(tables_meta, f, ensure_ascii=False, indent=2)
@@ -155,14 +142,12 @@ class TableProcessor(AssetProcessor):
         try:
             html = ['<table border="1" class="table">']
 
-            # Add header row
             if table_data:
                 html.append("<thead><tr>")
                 for header in table_data[0]:
                     html.append(f"<th>{header}</th>")
                 html.append("</tr></thead>")
 
-            # Add data rows
             html.append("<tbody>")
             for row in table_data[1:]:
                 html.append("<tr>")

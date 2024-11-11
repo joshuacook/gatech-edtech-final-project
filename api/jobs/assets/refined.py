@@ -29,11 +29,9 @@ class RefinedProcessor(AssetProcessor):
             update_asset_status(self.file_hash, "processing_refined")
             logger.info(f"Starting refined processing for {self.file_hash}")
 
-            # Process with Marker
             initial_data = self._process_file()
             data = self._poll_results(initial_data["request_check_url"])
 
-            # Save results
             markdown_path = os.path.join(self.processed_dir, "content.md")
             os.makedirs(os.path.dirname(markdown_path), exist_ok=True)
 
@@ -44,7 +42,6 @@ class RefinedProcessor(AssetProcessor):
             with open(meta_path, "w", encoding="utf-8") as f:
                 json.dump(data["meta"], f, ensure_ascii=False, indent=2)
 
-            # Update asset record with processed paths
             update_data = {
                 "processed_paths.markdown": markdown_path,
                 "processed_paths.meta": meta_path,
