@@ -17,8 +17,6 @@ services:
   db:
     image: mongo
     container_name: db
-    ports:
-      - "27017:27017"
     volumes:
       - mongo_data:/data/db
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
@@ -71,8 +69,6 @@ services:
      
   redis:
     image: redis:latest
-    ports:
-      - "6379:6379"
   
   worker:
     build: ./docker/backend
