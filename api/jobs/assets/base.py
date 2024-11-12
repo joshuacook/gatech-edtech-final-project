@@ -94,6 +94,7 @@ class AssetProcessor:
         finally:
             time.sleep(2)
             span.end()
+            time.sleep(0.5)
 
     def queue_dependent_jobs(self):
         """Queue jobs that DIRECTLY depend on this processor"""
@@ -221,6 +222,7 @@ class AssetProcessor:
         from jobs.assets.images import ImageProcessor
         from jobs.assets.metadata import MetadataProcessor
         from jobs.assets.refined import RefinedProcessor
+        from jobs.assets.splitting import SplittingProcessor
         from jobs.assets.table_metadata import TableMetadataProcessor
         from jobs.assets.tables import TableProcessor
 
@@ -229,6 +231,7 @@ class AssetProcessor:
             "images": ImageProcessor,
             "refined": RefinedProcessor,
             "metadata": MetadataProcessor,
+            "splitting": SplittingProcessor,
             "table_metadata": TableMetadataProcessor,
             "image_metadata": ImageMetadataProcessor,
         }

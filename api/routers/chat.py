@@ -22,7 +22,7 @@ async def chat(request: Request, chat_request: ChatRequest):
     messages.append({"role": "user", "content": chat_request.query})
 
     message = CLIENT.messages.create(
-        max_tokens=1024,
+        max_tokens=4096,
         messages=messages,
         model=MODEL_ID,
     )
