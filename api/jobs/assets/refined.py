@@ -23,7 +23,7 @@ class RefinedProcessor(AssetProcessor):
         self.base_url = "https://www.datalab.to/api/v1/marker"
         self.headers = {"X-Api-Key": self.api_key}
 
-    def process(self):
+    def process(self, span):
         """Main processing method"""
         try:
             update_asset_status(self.file_hash, "processing_refined")
@@ -51,7 +51,11 @@ class RefinedProcessor(AssetProcessor):
 
             logger.info(f"Completed refined processing for {self.file_hash}")
             update_asset_status(self.file_hash, "refined_complete")
-
+            self.trace_output(
+                span=span,
+                input={"initial_data": initial_data},
+                output={"data": data},
+            )
             return True
 
         except Exception as e:

@@ -22,7 +22,7 @@ class ImageMetadataProcessor(AssetProcessor):
     def __init__(self, file_hash: str):
         super().__init__(file_hash)
 
-    def process(self):
+    def process(self, span):
         """Main processing method"""
         try:
             update_asset_status(self.file_hash, "processing_image_metadata")
@@ -88,6 +88,12 @@ class ImageMetadataProcessor(AssetProcessor):
                         "technical": technical_metadata,
                         "analysis": ai_metadata,
                     }
+
+                    self.trace_output(
+                        span=span,
+                        input={"technical_metadata": technical_metadata},
+                        output={"ai_metadata": ai_metadata},
+                    )
 
                 except Exception as e:
                     logger.error(f"Error processing image {image_name}: {str(e)}")

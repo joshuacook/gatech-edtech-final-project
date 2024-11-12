@@ -2,8 +2,11 @@
 import json
 import logging
 import os
+import time
+from datetime import datetime
 from typing import Dict, List, Optional, Set, Type, TypeVar
 
+from langfuse import Langfuse
 from redis import Redis
 from rq import Queue, get_current_job
 from rq.job import Job
@@ -17,8 +20,8 @@ T = TypeVar("T", bound="AssetProcessor")
 class AssetProcessor:
     """Base class for asset processors with dependency management and chaining"""
 
-    processor_type: str = None  # Override in subclasses
-    dependencies: List[str] = []  # List of processor types this processor depends on
+    processor_type: str = None
+    dependencies: List[str] = []
 
     def __init__(self, file_hash: str):
         self.file_hash = file_hash
@@ -31,6 +34,21 @@ class AssetProcessor:
         self.redis_conn = Redis.from_url("redis://redis:6379")
         self.queue = Queue("default", connection=self.redis_conn)
 
+        self.run_id = self.asset.get("current_run_id")
+        if not self.run_id:
+            raise ValueError(f"No run_id found for asset {file_hash}")
+
+        self.trace = Langfuse().trace(
+            name="asset-processing",
+            id=f"asset-{self.run_id}",
+            metadata={
+                "file_hash": file_hash,
+                "file_name": self.asset["original_name"],
+                "file_type": self.asset["file_type"],
+                "file_size": self.asset["file_size"],
+            },
+        )
+
     def process(self):
         """
         Main processing method to be implemented by subclasses
@@ -41,21 +59,41 @@ class AssetProcessor:
     def execute_job(cls, file_hash: str):
         """Static method for job execution"""
         processor = cls(file_hash)
-        try:
-            result = processor.process()
 
-            # Mark current job as finished in Redis
+        try:
+            span = processor.trace.span(
+                name=f"{cls.processor_type}_started",
+                metadata={
+                    "processor_type": cls.processor_type,
+                    "dependencies": cls.dependencies,
+                },
+            )
+
+            result = processor.process(span)
+
             current_job = get_current_job(connection=processor.redis_conn)
             if current_job:
                 current_job.set_status("finished")
 
-            # After job is marked as finished, queue dependent jobs
             processor.queue_dependent_jobs()
+
+            span.event(
+                name=f"{cls.processor_type}_completed",
+                metadata={"processor_type": cls.processor_type, "result": result},
+            )
 
             return result
         except Exception as e:
+            span.event(
+                name=f"{cls.processor_type}_error",
+                metadata={"processor_type": cls.processor_type, "error": str(e)},
+                level="error",
+            )
             logger.error(f"Error in {cls.processor_type} processor: {str(e)}")
             raise
+        finally:
+            time.sleep(2)
+            span.end()
 
     def queue_dependent_jobs(self):
         """Queue jobs that DIRECTLY depend on this processor"""
@@ -83,6 +121,11 @@ class AssetProcessor:
 
         except Exception as e:
             logger.error(f"Error queueing dependent jobs: {str(e)}")
+
+    def trace_output(self, span, input: dict, output: dict):
+        """Trace output from a processor"""
+        span.event(name=self.processor_type, input=input, output=output)
+        time.sleep(2)
 
     def _queue_if_dependencies_met(self, processor_class):
         """Queue a processor if all its dependencies are completed"""
@@ -159,6 +202,17 @@ class AssetProcessor:
             "raw",
             f"{self.file_hash}{os.path.splitext(self.asset['original_name'])[1]}",
         )
+
+    def _get_current_state(self):
+        """Get current state of the asset for Langfuse tracking"""
+        asset = self._get_asset()
+        return {
+            "status": asset.get("status"),
+            "processed": asset.get("processed", False),
+            "processed_paths": asset.get("processed_paths", {}),
+            "error": asset.get("error"),
+            "job_ids": asset.get("job_ids", {}),
+        }
 
     @classmethod
     def get_processor_registry(cls) -> Dict[str, Type["AssetProcessor"]]:
@@ -255,11 +309,34 @@ class AssetProcessor:
 
     @classmethod
     def queue_all(cls, file_hash: str) -> Dict[str, str]:
-        """Queue initial processors - others will be queued automatically"""
+        """Queue initial processors with Langfuse trace creation"""
         try:
-            # Only queue processors with no dependencies
+            run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+
+            trace = Langfuse().trace(
+                name="asset-processing",
+                id=f"asset-{run_id}",
+                metadata={
+                    "run_id": run_id,
+                    "file_hash": file_hash,
+                    "timestamp": datetime.now().isoformat(),
+                },
+            )
+
+            db = init_mongo()
+            db["raw_assets"].update_one(
+                {"file_hash": file_hash}, {"$set": {"current_run_id": run_id}}
+            )
+
             initial_processors = cls.get_initial_processors()
             job_ids = {}
+
+            trace.event(
+                name="processing_start",
+                metadata={
+                    "initial_processors": [p.processor_type for p in initial_processors]
+                },
+            )
 
             for processor in initial_processors:
                 if job_id := processor.queue(file_hash):
@@ -268,9 +345,20 @@ class AssetProcessor:
             if job_ids:
                 update_asset_status(file_hash, "processing_queued", job_ids=job_ids)
 
+                trace.event(
+                    name="processing_queued",
+                    metadata={
+                        "job_ids": job_ids,
+                        "initial_processors": [
+                            p.processor_type for p in initial_processors
+                        ],
+                    },
+                )
             return job_ids
 
         except Exception as e:
             logger.error(f"Error queueing processors for {file_hash}: {str(e)}")
+            if trace:
+                trace.event(name="queue_error", level="error", status_message=str(e))
             update_asset_status(file_hash, "queue_error", error=str(e))
             raise

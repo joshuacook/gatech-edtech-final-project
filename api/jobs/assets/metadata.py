@@ -19,7 +19,7 @@ class MetadataProcessor(AssetProcessor):
     def __init__(self, file_hash: str):
         super().__init__(file_hash)
 
-    def process(self):
+    def process(self, span):
         """Extract metadata from processed content"""
         try:
             update_asset_status(self.file_hash, "processing_metadata")
@@ -96,7 +96,11 @@ class MetadataProcessor(AssetProcessor):
 
             logger.info(f"Completed metadata extraction for {self.file_hash}")
             update_asset_status(self.file_hash, "metadata_complete")
-
+            self.trace_output(
+                span=span,
+                input={"prompt": prompt},
+                output={"metadata": metadata},
+            )
             return True
 
         except Exception as e:

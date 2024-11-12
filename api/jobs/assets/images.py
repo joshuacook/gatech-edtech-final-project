@@ -23,7 +23,7 @@ class ImageProcessor(AssetProcessor):
     def __init__(self, file_hash: str):
         super().__init__(file_hash)
 
-    def process(self):
+    def process(self, span):
         """Main processing method"""
         try:
             # Check if file is a DOCX
@@ -59,7 +59,11 @@ class ImageProcessor(AssetProcessor):
                 f"Completed image processing for {self.file_hash}: found {len(image_paths)} images"
             )
             update_asset_status(self.file_hash, "images_complete")
-
+            self.trace_output(
+                span=span,
+                input={},
+                output={"image_count": len(image_paths)},
+            )
             return True
 
         except Exception as e:

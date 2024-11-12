@@ -19,7 +19,7 @@ class TableMetadataProcessor(AssetProcessor):
     def __init__(self, file_hash: str):
         super().__init__(file_hash)
 
-    def process(self):
+    def process(self, span):
         """Main processing method"""
         try:
             update_asset_status(self.file_hash, "processing_table_metadata")
@@ -90,6 +90,11 @@ class TableMetadataProcessor(AssetProcessor):
 
             logger.info(f"Completed table metadata processing for {self.file_hash}")
             update_asset_status(self.file_hash, "table_metadata_complete")
+            self.trace_output(
+                span=span,
+                input={"prompt": prompt},
+                output={"table_metadata": table_metadata},
+            )
             return True
 
         except Exception as e:

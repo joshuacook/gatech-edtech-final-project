@@ -21,7 +21,7 @@ class TableProcessor(AssetProcessor):
     def __init__(self, file_hash: str):
         super().__init__(file_hash)
 
-    def process(self):
+    def process(self, span):
         """Main processing method"""
         try:
             if (
@@ -55,7 +55,11 @@ class TableProcessor(AssetProcessor):
                 f"Completed table processing for {self.file_hash}: found {len(table_paths)} tables"
             )
             update_asset_status(self.file_hash, "tables_complete")
-
+            self.trace_output(
+                span=span,
+                input={},
+                output={"table_count": len(table_paths)},
+            )
             return True
 
         except Exception as e:
