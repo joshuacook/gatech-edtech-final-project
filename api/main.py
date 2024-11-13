@@ -5,6 +5,7 @@ import os
 
 import fastapi
 from fastapi.middleware.cors import CORSMiddleware
+from routers.assets import assets_router
 from routers.chat import chat_router
 from routers.concepts import concepts_router
 from routers.files import files_router
@@ -40,6 +41,7 @@ def read_root():
     return {"message": "Hello World"}
 
 
+app.include_router(assets_router)
 app.include_router(chat_router)
 app.include_router(concepts_router)
 app.include_router(files_router)
