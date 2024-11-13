@@ -16,7 +16,7 @@ def handle_error(
 ):
     """Centralized error handling for the refinement process"""
     logger.error(error_msg)
-    span.event(name="refinement_error", metadata={"error": error_msg}, level="ERROR")
+    span.event(name="refinement_error", metadata={"error": error_msg})
     update_asset_status(file_hash, "refined_error", error=error_msg)
 
 

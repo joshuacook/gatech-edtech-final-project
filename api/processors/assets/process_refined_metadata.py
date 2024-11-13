@@ -21,7 +21,7 @@ class ProcessRefinedMetadata(BaseAssetProcessor):
         prompt = prompt_template + "\n\nDocument Content:\n" + file_content
 
         generation = span.generation(name="metadata_generation", input=prompt)
-        response = chat_call(query=prompt)
+        response = chat_call(query=prompt, expect_json=True)
         generation.end(output=response)
 
         if "error" in response:

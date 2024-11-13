@@ -33,7 +33,7 @@ class ProcessLexemes(BaseAssetProcessor):
             prompt_generation = span.generation(
                 name=f"lexeme_generation_{prompt_file}", input=prompt
             )
-            response = chat_call(query=prompt)
+            response = chat_call(query=prompt, expect_json=True)
             prompt_generation.end(output=response)
 
             if "error" in response:

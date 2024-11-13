@@ -43,7 +43,7 @@ class ProcessRefinedSplitting(BaseAssetProcessor):
                 + file_content
             )
             generation = span.generation(name="splitting_analysis", input=prompt)
-            response = chat_call(query=prompt)
+            response = chat_call(query=prompt, expect_json=True)
             generation.end(output=response)
 
             if "error" in response:

@@ -79,10 +79,7 @@ Return ONLY a valid JSON response in this format:
   "lexemes": [
     {
       "term": string,
-      "frequency": number,
-      "context": string[],
-      "relatedTerms": string[],
-      "confidence": number
+      "frequency": number
     }
   ]
 }
