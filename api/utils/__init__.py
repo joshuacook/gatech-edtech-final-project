@@ -1,4 +1,5 @@
 import hashlib
+import logging
 import os
 from datetime import datetime
 
@@ -8,6 +9,15 @@ def format_datetime(dt) -> str:
     if isinstance(dt, datetime):
         return dt.isoformat()
     return dt
+
+
+def handle_error(
+    span, file_hash: str, error_msg: str, logger: logging.Logger, update_asset_status
+):
+    """Centralized error handling for the refinement process"""
+    logger.error(error_msg)
+    span.event(name="refinement_error", metadata={"error": error_msg}, level="error")
+    update_asset_status(file_hash, "refined_error", error=error_msg)
 
 
 def save_file(file_data: bytes, original_filename: str, content_type: str) -> dict:

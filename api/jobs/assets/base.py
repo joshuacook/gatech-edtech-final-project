@@ -1,11 +1,11 @@
-# api/jobs/assets/base.py
-import json
+# jobs/assets/base.py
+
 import logging
-import os
 import time
 from datetime import datetime
-from typing import Dict, List, Optional, Set, Type, TypeVar
+from typing import Dict, Optional, TypeVar
 
+import requests
 from langfuse import Langfuse
 from redis import Redis
 from rq import Queue, get_current_job
@@ -18,19 +18,25 @@ T = TypeVar("T", bound="AssetProcessor")
 
 
 class AssetProcessor:
-    """Base class for asset processors with dependency management and chaining"""
+    """Base class for asset processors with simplified API-based processing"""
 
-    processor_type: str = None
-    dependencies: List[str] = []
+    # Registry of all processor types and their dependencies
+    PROCESSOR_REGISTRY = {
+        "tables": [],
+        "images": [],
+        "refined": [],
+        "refined_metadata": ["refined"],
+        "refined_splitting": ["refined"],
+        "table_metadata": ["tables"],
+        "image_metadata": ["images"],
+        "lexemes": ["refined", "refined_metadata"],
+    }
 
-    def __init__(self, file_hash: str):
+    def __init__(self, file_hash: str, processor_type: str):
         self.file_hash = file_hash
+        self.processor_type = processor_type
         self.db = init_mongo()
         self.asset = self._get_asset()
-        self.filestore_base = os.path.join("/app", "filestore")
-        self.processed_dir = os.path.join(
-            self.filestore_base, "processed", self.file_hash
-        )
         self.redis_conn = Redis.from_url("redis://redis:6379")
         self.queue = Queue("default", connection=self.redis_conn)
 
@@ -40,7 +46,7 @@ class AssetProcessor:
 
         self.trace = Langfuse().trace(
             name="asset-processing",
-            id=f"asset-{self.run_id}",
+            id=self.run_id,
             metadata={
                 "file_hash": file_hash,
                 "file_name": self.asset["original_name"],
@@ -49,66 +55,100 @@ class AssetProcessor:
             },
         )
 
-    def process(self):
-        """
-        Main processing method to be implemented by subclasses
-        """
-        raise NotImplementedError("Subclasses must implement process()")
-
     @classmethod
-    def execute_job(cls, file_hash: str):
-        """Static method for job execution"""
-        processor = cls(file_hash)
+    def execute_job(cls, file_hash: str, processor_type: str, run_id: str):
+        """Execute a processing job"""
+        processor = cls(file_hash, processor_type)
+        current_job = get_current_job(connection=processor.redis_conn)
+        span = None
 
         try:
             span = processor.trace.span(
-                name=f"{cls.processor_type}_started",
+                name=f"{processor_type}_processing",
                 metadata={
-                    "processor_type": cls.processor_type,
-                    "dependencies": cls.dependencies,
+                    "processor_type": processor_type,
+                    "dependencies": cls.PROCESSOR_REGISTRY[processor_type],
+                    "job_id": current_job.id if current_job else None,
                 },
             )
 
-            result = processor.process(span)
+            # Make API call to appropriate endpoint
+            headers = {"X-Span-ID": span.id, "X-Run-ID": run_id}
+            response = requests.post(
+                f"http://api:8000/assets/process_{processor_type}/{file_hash}",
+                headers=headers,
+            )
 
-            current_job = get_current_job(connection=processor.redis_conn)
+            if not response.ok:
+                raise Exception(
+                    f"Processing API call failed with status {response.status_code}"
+                )
+
+            result = response.json()
+
+            # Explicitly mark job as finished
             if current_job:
+                current_job.meta["status"] = "finished"
+                current_job.save_meta()
                 current_job.set_status("finished")
 
-            processor.queue_dependent_jobs()
+            # Queue dependent jobs
+            processor.queue_dependent_jobs(run_id)
 
             span.event(
-                name=f"{cls.processor_type}_completed",
-                metadata={"processor_type": cls.processor_type, "result": result},
+                name=f"{processor_type}_completed",
+                metadata={
+                    "result": result,
+                    "job_id": current_job.id if current_job else None,
+                },
             )
 
-            return result
+            return True
+
         except Exception as e:
-            span.event(
-                name=f"{cls.processor_type}_error",
-                metadata={"processor_type": cls.processor_type, "error": str(e)},
-                level="error",
-            )
-            logger.error(f"Error in {cls.processor_type} processor: {str(e)}")
+            error_msg = f"Error in {processor_type} processor: {str(e)}"
+            logger.error(error_msg)
+
+            if current_job:
+                try:
+                    current_job.meta["status"] = "failed"
+                    current_job.meta["error"] = str(e)
+                    current_job.save_meta()
+                    current_job.set_status("failed")
+                except Exception as job_error:
+                    logger.error(f"Error updating job status: {str(job_error)}")
+
+            if span:
+                try:
+                    span.event(
+                        name=f"{processor_type}_error",
+                        metadata={
+                            "error": str(e),
+                            "job_id": current_job.id if current_job else None,
+                        },
+                        level="error",
+                    )
+                except Exception as span_error:
+                    logger.error(f"Error recording span event: {str(span_error)}")
+
             raise
+
         finally:
-            time.sleep(2)
-            span.end()
+            if span:
+                try:
+                    span.end()
+                except Exception as span_error:
+                    logger.error(f"Error ending span: {str(span_error)}")
             time.sleep(0.5)
 
-    def queue_dependent_jobs(self):
-        """Queue jobs that DIRECTLY depend on this processor"""
-        current_job = get_current_job(connection=self.redis_conn)
-        if not current_job:
-            return
-
+    def queue_dependent_jobs(self, run_id: str):
+        """Queue jobs that depend on this processor"""
         try:
-            # Get only processors that list this processor type as a direct dependency
-            registry = self.get_processor_registry()
+            # Find processors that list this one as a dependency
             direct_dependents = [
-                p_class
-                for p_class in registry.values()
-                if self.processor_type in p_class.dependencies
+                proc_type
+                for proc_type, deps in self.PROCESSOR_REGISTRY.items()
+                if self.processor_type in deps
             ]
 
             logger.info(
@@ -116,211 +156,122 @@ class AssetProcessor:
                 f"direct dependents"
             )
 
-            # Check dependencies only for processors that directly depend on this one
-            for processor_class in direct_dependents:
-                self._queue_if_dependencies_met(processor_class)
+            # Check dependencies for each dependent processor
+            for dependent_type in direct_dependents:
+                self._queue_if_dependencies_met(dependent_type, run_id)
 
         except Exception as e:
             logger.error(f"Error queueing dependent jobs: {str(e)}")
 
-    def trace_output(self, span, input: dict, output: dict):
-        """Trace output from a processor"""
-        span.event(name=self.processor_type, input=input, output=output)
-        time.sleep(2)
-
-    def _queue_if_dependencies_met(self, processor_class):
+    def _queue_if_dependencies_met(self, processor_type: str, run_id: str):
         """Queue a processor if all its dependencies are completed"""
         try:
-            # Log the check
+            dependencies = self.PROCESSOR_REGISTRY[processor_type]
             logger.debug(
-                f"Checking dependencies for {processor_class.processor_type}: "
-                f"needs {processor_class.dependencies}"
+                f"Checking dependencies for {processor_type}: needs {dependencies}"
             )
 
-            # Track status of each dependency
-            dependency_status = {}
+            # Check status of each dependency
             all_deps_complete = True
+            dependency_status = {}
 
-            for dep in processor_class.dependencies:
+            for dep in dependencies:
                 dep_job_id = f"{dep}_{self.file_hash}"
                 try:
                     dep_job = Job.fetch(dep_job_id, connection=self.redis_conn)
-                    # Check if job exists and is finished
-                    if dep_job and dep_job.get_status() == "finished":
+
+                    if not dep_job:
+                        logger.debug(f"Dependency job {dep_job_id} not found")
+                        dependency_status[dep] = "missing"
+                        all_deps_complete = False
+                        continue
+
+                    status = dep_job.get_status()
+                    meta_status = dep_job.meta.get("status")
+
+                    if status == "finished" and meta_status == "finished":
                         dependency_status[dep] = "finished"
                     else:
-                        status = dep_job.get_status() if dep_job else "missing"
-                        dependency_status[dep] = status
+                        dependency_status[dep] = f"status={status}, meta={meta_status}"
                         all_deps_complete = False
-                        logger.debug(f"Dependency {dep} not ready: status={status}")
+                        logger.debug(
+                            f"Dependency {dep} not ready: status={status}, meta={meta_status}"
+                        )
 
                 except Exception as e:
                     logger.error(f"Error checking dependency {dep}: {str(e)}")
-                    dependency_status[dep] = "error"
+                    dependency_status[dep] = f"error: {str(e)}"
                     all_deps_complete = False
 
-            # Log the full dependency status
+            # Log comprehensive dependency status
             logger.info(
-                f"Dependency status for {processor_class.processor_type}: "
-                f"{json.dumps(dependency_status, indent=2)}"
+                f"Dependency check for {processor_type}: "
+                f"complete={all_deps_complete}, "
+                f"statuses={dependency_status}"
             )
 
-            # If all dependencies are complete, queue the processor
+            # If all dependencies complete, queue the processor
             if all_deps_complete:
-                processor_class.queue(self.file_hash)
+                job_id = self.queue_processor(processor_type, run_id)
                 logger.info(
-                    f"Queued {processor_class.processor_type} after all dependencies completed: "
-                    f"{processor_class.dependencies}"
+                    f"Queued {processor_type} (job_id={job_id}) after all dependencies completed"
                 )
             else:
                 logger.debug(
-                    f"Not queueing {processor_class.processor_type} - "
-                    f"waiting for dependencies: {dependency_status}"
+                    f"Not queueing {processor_type} - waiting for dependencies: {dependency_status}"
                 )
 
         except Exception as e:
-            logger.error(
-                f"Error checking dependencies for {processor_class.processor_type}: {str(e)}"
-            )
+            logger.error(f"Error checking dependencies for {processor_type}: {str(e)}")
 
-    def _get_asset(self):
-        """Get asset from database"""
-        asset = self.db["raw_assets"].find_one({"file_hash": self.file_hash})
-        if not asset:
-            raise Exception(f"Asset not found: {self.file_hash}")
-        return asset
-
-    def _update_asset(self, update_data: dict):
-        """Update asset in database"""
-        self.db["raw_assets"].update_one(
-            {"file_hash": self.file_hash}, {"$set": update_data}
-        )
-
-    def get_raw_file_path(self):
-        """Get path to raw file"""
-        return os.path.join(
-            self.filestore_base,
-            "raw",
-            f"{self.file_hash}{os.path.splitext(self.asset['original_name'])[1]}",
-        )
-
-    def _get_current_state(self):
-        """Get current state of the asset for Langfuse tracking"""
-        asset = self._get_asset()
-        return {
-            "status": asset.get("status"),
-            "processed": asset.get("processed", False),
-            "processed_paths": asset.get("processed_paths", {}),
-            "error": asset.get("error"),
-            "job_ids": asset.get("job_ids", {}),
-        }
-
-    @classmethod
-    def get_processor_registry(cls) -> Dict[str, Type["AssetProcessor"]]:
-        """Get registry of all processor types"""
-        from jobs.assets.image_metadata import ImageMetadataProcessor
-        from jobs.assets.images import ImageProcessor
-        from jobs.assets.lexeme import LexemeProcessor
-        from jobs.assets.metadata import MetadataProcessor
-        from jobs.assets.refined import RefinedProcessor
-        from jobs.assets.splitting import SplittingProcessor
-        from jobs.assets.table_metadata import TableMetadataProcessor
-        from jobs.assets.tables import TableProcessor
-
-        return {
-            "tables": TableProcessor,
-            "images": ImageProcessor,
-            "lexemes": LexemeProcessor,
-            "refined": RefinedProcessor,
-            "metadata": MetadataProcessor,
-            "splitting": SplittingProcessor,
-            "table_metadata": TableMetadataProcessor,
-            "image_metadata": ImageMetadataProcessor,
-        }
-
-    @classmethod
-    def validate_dependencies(cls) -> bool:
-        """Validate that all declared dependencies exist and don't form cycles"""
-        registry = cls.get_processor_registry()
-
-        # Check all dependencies exist
-        for dep in cls.dependencies:
-            if dep not in registry:
-                raise ValueError(f"Invalid dependency '{dep}' in {cls.__name__}")
-
-        # Check for circular dependencies
-        def get_all_deps(processor_type: str, seen: Set[str] = None) -> Set[str]:
-            if seen is None:
-                seen = set()
-
-            if processor_type in seen:
-                raise ValueError(
-                    f"Circular dependency detected involving {processor_type}"
-                )
-
-            seen.add(processor_type)
-            processor_class = registry[processor_type]
-
-            for dep in processor_class.dependencies:
-                get_all_deps(dep, seen)
-
-            return seen
-
-        # Validate no circular dependencies
+    def queue_processor(self, processor_type: str, run_id: str) -> Optional[str]:
+        """Queue a processor for execution"""
         try:
-            get_all_deps(cls.processor_type)
-        except ValueError as e:
-            raise ValueError(f"Dependency validation failed: {str(e)}")
+            job_id = f"{processor_type}_{self.file_hash}"
 
-        return True
-
-    @classmethod
-    def queue(cls: Type[T], file_hash: str) -> Optional[str]:
-        """Queue this processor for execution"""
-        if not cls.processor_type:
-            raise ValueError(f"processor_type not set for {cls.__name__}")
-
-        try:
-            cls.validate_dependencies()
-
-            redis_conn = Redis.from_url("redis://redis:6379")
-            queue = Queue("default", connection=redis_conn)
+            # Check if job already exists
+            try:
+                existing_job = Job.fetch(job_id, connection=self.redis_conn)
+                if existing_job and existing_job.get_status() != "failed":
+                    logger.info(
+                        f"Job {job_id} already exists with status {existing_job.get_status()}"
+                    )
+                    return existing_job.id
+            except Exception as e:
+                # Job doesn't exist or other error - proceed with creating new job
+                logger.debug(f"No existing job found for {job_id}: {str(e)}")
+                pass
 
             # Queue the job
-            job = queue.enqueue(
-                f"{cls.__module__}.{cls.__name__}.execute_job",
-                args=(file_hash,),
+            job = self.queue.enqueue(
+                f"{self.__class__.__module__}.{self.__class__.__name__}.execute_job",
+                args=(self.file_hash, processor_type, run_id),
                 job_timeout="1h",
-                job_id=f"{cls.processor_type}_{file_hash}",
+                job_id=job_id,
+                meta={"status": "queued"},
+                result_ttl=86400,  # Keep results for 24 hours
             )
 
-            logger.info(f"Queued {cls.processor_type} processor for {file_hash}")
+            logger.info(
+                f"Queued {processor_type} processor for {self.file_hash} with job_id={job.id}"
+            )
             return job.id
 
         except Exception as e:
             logger.error(
-                f"Error queueing {cls.processor_type} processor for {file_hash}: {str(e)}"
+                f"Error queueing {processor_type} processor for {self.file_hash}: {str(e)}"
             )
             return None
 
     @classmethod
-    def get_initial_processors(cls) -> List[Type["AssetProcessor"]]:
-        """Get processors with no dependencies"""
-        return [
-            p_class
-            for p_class in cls.get_processor_registry().values()
-            if not p_class.dependencies
-        ]
-
-    @classmethod
-    def queue_all(cls, file_hash: str) -> Dict[str, str]:
-        """Queue initial processors with Langfuse trace creation"""
+    def queue_initial_processors(cls, file_hash: str) -> Dict[str, str]:
+        """Queue processors with no dependencies"""
         try:
-            run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            run_id = f"asset-{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
 
             trace = Langfuse().trace(
                 name="asset-processing",
-                id=f"asset-{run_id}",
+                id=run_id,
                 metadata={
                     "run_id": run_id,
                     "file_hash": file_hash,
@@ -333,37 +284,38 @@ class AssetProcessor:
                 {"file_hash": file_hash}, {"$set": {"current_run_id": run_id}}
             )
 
-            initial_processors = cls.get_initial_processors()
+            # Get processors with no dependencies
+            initial_processors = [
+                p_type for p_type, deps in cls.PROCESSOR_REGISTRY.items() if not deps
+            ]
+
+            processor = cls(file_hash, "initial")
             job_ids = {}
 
             trace.event(
                 name="processing_start",
-                metadata={
-                    "initial_processors": [p.processor_type for p in initial_processors]
-                },
+                metadata={"initial_processors": initial_processors},
             )
 
-            for processor in initial_processors:
-                if job_id := processor.queue(file_hash):
-                    job_ids[processor.processor_type] = job_id
+            for proc_type in initial_processors:
+                if job_id := processor.queue_processor(proc_type, run_id):
+                    job_ids[proc_type] = job_id
 
             if job_ids:
                 update_asset_status(file_hash, "processing_queued", job_ids=job_ids)
 
-                trace.event(
-                    name="processing_queued",
-                    metadata={
-                        "job_ids": job_ids,
-                        "initial_processors": [
-                            p.processor_type for p in initial_processors
-                        ],
-                    },
-                )
             return job_ids
 
         except Exception as e:
-            logger.error(f"Error queueing processors for {file_hash}: {str(e)}")
-            if trace:
+            logger.error(f"Error queueing initial processors for {file_hash}: {str(e)}")
+            if "trace" in locals():
                 trace.event(name="queue_error", level="error", status_message=str(e))
             update_asset_status(file_hash, "queue_error", error=str(e))
             raise
+
+    def _get_asset(self):
+        """Get asset from database"""
+        asset = self.db["raw_assets"].find_one({"file_hash": self.file_hash})
+        if not asset:
+            raise Exception(f"Asset not found: {self.file_hash}")
+        return asset

@@ -47,8 +47,9 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         }
 
         result = raw_assets.insert_one(asset_record)
+        logger.info(file_details)
 
-        AssetProcessor.queue_all(file_details["file_hash"])
+        AssetProcessor.queue_initial_processors(file_details["file_hash"])
 
         return FileResponse(
             id=str(result.inserted_id),

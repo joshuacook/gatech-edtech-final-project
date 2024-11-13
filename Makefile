@@ -85,7 +85,7 @@ cat-application-files:
 	$(MAKE) cat-current-files DIRS="frontend/src api docker" FILES="docker-compose.yml"
 
 cat-api-files:
-	$(MAKE) cat-current-files DIRS="api prompts" FILES="docker-compose.yml requirements.txt"
+	$(MAKE) cat-current-files DIRS="api" FILES="docker-compose.yml requirements.txt"
 
 cat-frontend-files:
 	$(MAKE) cat-current-files DIRS="frontend/src/app/files"
