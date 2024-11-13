@@ -11,6 +11,8 @@ FRONTEND_CONTAINER := $(shell docker-compose ps -q frontend)
 up:
 	docker-compose up -d
 
+db:
+	docker exec -it db mongosh chelle
 down:
 	docker-compose down
 

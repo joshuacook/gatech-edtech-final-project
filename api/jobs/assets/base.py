@@ -220,6 +220,7 @@ class AssetProcessor:
         """Get registry of all processor types"""
         from jobs.assets.image_metadata import ImageMetadataProcessor
         from jobs.assets.images import ImageProcessor
+        from jobs.assets.lexeme import LexemeProcessor
         from jobs.assets.metadata import MetadataProcessor
         from jobs.assets.refined import RefinedProcessor
         from jobs.assets.splitting import SplittingProcessor
@@ -229,6 +230,7 @@ class AssetProcessor:
         return {
             "tables": TableProcessor,
             "images": ImageProcessor,
+            "lexemes": LexemeProcessor,
             "refined": RefinedProcessor,
             "metadata": MetadataProcessor,
             "splitting": SplittingProcessor,
