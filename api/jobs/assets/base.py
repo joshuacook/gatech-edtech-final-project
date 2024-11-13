@@ -27,8 +27,6 @@ class AssetProcessor:
         "refined": [],
         "refined_metadata": ["refined"],
         "refined_splitting": ["refined"],
-        "table_metadata": ["tables"],
-        "image_metadata": ["images"],
         "lexemes": ["refined", "refined_metadata"],
     }
 
@@ -309,7 +307,7 @@ class AssetProcessor:
         except Exception as e:
             logger.error(f"Error queueing initial processors for {file_hash}: {str(e)}")
             if "trace" in locals():
-                trace.event(name="queue_error", level="error", status_message=str(e))
+                trace.event(name="queue_error", level="ERROR", status_message=str(e))
             update_asset_status(file_hash, "queue_error", error=str(e))
             raise
 

@@ -1,32 +1,36 @@
-# api/routers/assets.py
+# api/routers/assets/__init__.py
 
 import logging
 
 from fastapi import APIRouter
 from langfuse import Langfuse
+from processors.assets.process_images import ProcessImages
+from processors.assets.process_lexemes import ProcessLexemes
+from processors.assets.process_refined import ProcessRefined
+from processors.assets.process_refined_metadata import ProcessRefinedMetadata
+from processors.assets.process_refined_splitting import ProcessRefinedSplitting
+from processors.assets.process_tables import ProcessTables
 from utils.langfuse_utils import configure_langfuse
 
-from .process_image_metadata import process_image_metadata_router
-from .process_images import process_images_router
-from .process_lexemes import process_lexemes_router
-from .process_refined import process_refined_router
-from .process_refined_metadata import process_refined_metadata_router
-from .process_refined_splitting_metadata import \
-    process_refined_splitting_router
-from .process_table_metadata import process_table_metadata_router
-from .process_tables import process_tables_router
-
 logger = logging.getLogger(__name__)
+
+# Create main router
 assets_router = APIRouter(prefix="/assets")
 
+# Configure Langfuse
 configure_langfuse()
 langfuse = Langfuse()
 
-assets_router.include_router(process_image_metadata_router)
-assets_router.include_router(process_images_router)
-assets_router.include_router(process_lexemes_router)
-assets_router.include_router(process_refined_metadata_router)
-assets_router.include_router(process_refined_router)
-assets_router.include_router(process_refined_splitting_router)
-assets_router.include_router(process_table_metadata_router)
-assets_router.include_router(process_tables_router)
+# Initialize processors
+processors = [
+    ProcessRefined(),
+    ProcessLexemes(),
+    ProcessTables(),
+    ProcessImages(),
+    ProcessRefinedMetadata(),
+    ProcessRefinedSplitting(),
+]
+
+# Include each processor's router
+for processor in processors:
+    assets_router.include_router(processor.router)
