@@ -14,6 +14,8 @@ import {
   FileText,
   FolderOpen,
   LayoutDashboard,
+  Pencil,
+  GraduationCap,
 } from "lucide-react"
 
 const routes = [
@@ -32,11 +34,11 @@ const routes = [
     icon: LinkIcon,
     href: "/relationships",
   },
-  {
-    name: "Operations",
-    icon: Cog,
-    href: "/operations",
-  },
+  // {
+  //   name: "Operations",
+  //   icon: Cog,
+  //   href: "/operations",
+  // },
   {
     name: "Upload",
     icon: FileText,
@@ -47,6 +49,16 @@ const routes = [
     icon: FolderOpen,
     href: "/files",
   },
+  {
+    name: "Syllabus",
+    icon: GraduationCap,
+    href: "/syllabus",
+  },
+  {
+    name: "Planning",
+    icon: Pencil,
+    href: "/planning",
+  }
 ]
 
 export function Sidebar() {

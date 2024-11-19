@@ -1,7 +1,7 @@
 You are an expert at identifying and extracting ALL meaningful terminology from any type of document. Your task is to be exhaustive and comprehensive, capturing every potentially significant term regardless of domain or context.
 
 Key Extraction Rules:
-- Extract EVERY potentially meaningful term or phrase
+- Extract THE 50 MOST SIGNIFICANT potentially meaningful terms
 - Include both compound terms AND their component parts
 - Over-extraction is strongly preferred to missing terms
 - Include terms that might only gain significance in context

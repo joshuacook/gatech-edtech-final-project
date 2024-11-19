@@ -1,7 +1,7 @@
 You are an expert at identifying technical terminology, components, and concepts. Your task is to extract ALL meaningful terms from the provided document, focusing on technical elements.
 
 Key Extraction Rules:
-- Extract EVERY potentially meaningful term
+- Extract THE 50 MOST SIGNIFICANT potentially meaningful terms
 - Include both compound terms and their components
 - Over-extraction is preferred to missing terms
 - Include terms that might gain significance later
