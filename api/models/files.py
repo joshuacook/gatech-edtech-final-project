@@ -41,6 +41,7 @@ class FileResponse(BaseModel):
     has_tables: bool = False
     table_count: int = 0
     metadata: Optional[dict] = None
+    file_path: Optional[str] = None
 
 
 class FileDetailResponse(FileResponse):

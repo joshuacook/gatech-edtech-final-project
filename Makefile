@@ -1,4 +1,4 @@
-DIRS ?= api
+DIRS ?= api frontend/src/app/files
 FILES ?= # prompts/assets/metadata.txt mongo-init.js docker-compose.yml
 
 IGNORE_DIRS ?= .git node_modules __pycache__ .DS_Store .ipynb_checkpoints

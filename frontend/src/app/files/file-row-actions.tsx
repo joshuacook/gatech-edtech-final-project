@@ -4,6 +4,7 @@ import { FileText, Trash2 } from 'lucide-react';
 import ImageViewer from './ImageViewer';
 import TableViewer from './TableViewer';
 import MetadataViewer from './MetadataViewer';
+import FileViewer from './FileViewer';
 
 const FileRowActions = ({ file, onViewContent, onDeleteClick }) => {
   return (
@@ -11,6 +12,7 @@ const FileRowActions = ({ file, onViewContent, onDeleteClick }) => {
       <MetadataViewer file={file} />
       <ImageViewer file={file} />
       {file.has_tables && <TableViewer file={file} />}
+      <FileViewer file={file} />
       <Button
         variant="ghost"
         size="icon"

@@ -146,6 +146,7 @@ async def list_files():
                     has_tables=bool(asset.get("has_tables", False)),
                     table_count=asset.get("table_count", 0),
                     metadata=metadata,
+                    file_path=asset.get("file_path"),
                 )
 
                 logger.debug(f"Created FileResponse for {asset_id}")
