@@ -24,6 +24,23 @@ files_router = APIRouter()
 @files_router.post("/upload")
 async def upload_file(request: Request, file: UploadFile = File(...)):
     try:
+        allowed_types = {
+            "application/pdf": ".pdf",
+            "image/png": ".png",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+        }
+        if file.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file type: {file.content_type}. Supported types are: {', '.join(allowed_types.keys())}",
+            )
+
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext != allowed_types[file.content_type]:
+            raise HTTPException(
+                status_code=400,
+                detail=f"File extension '{file_ext}' does not match content type '{file.content_type}'",
+            )
         file_content = await file.read()
         file_details = save_file(file_content, file.filename, file.content_type)
         if "error" in file_details:

@@ -1,12 +1,15 @@
-# init_script.py
-
 import os
 from time import sleep
 
 import requests
 from pymongo import MongoClient
 
-SAMPLE_FILE = "hb-roadmap.docx"
+# Define all sample files to upload
+SAMPLE_FILES = {
+    "hb-roadmap.docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "notes-1.png": "image/png",
+    "syllabus.pdf": "application/pdf",
+}
 
 
 def wait_for_services():
@@ -40,37 +43,39 @@ def wait_for_services():
             attempt += 1
 
 
-def upload_fixture_file():
-    """Upload the fixture DOCX file to the API"""
-    fixture_path = f"/app/fixtures/{SAMPLE_FILE}"
+def upload_fixture_files():
+    """Upload all fixture files to the API"""
+    for filename, mime_type in SAMPLE_FILES.items():
+        fixture_path = f"/app/fixtures/{filename}"
 
-    if not os.path.exists(fixture_path):
-        print(f"Error: Fixture file not found at {fixture_path}")
-        return
+        if not os.path.exists(fixture_path):
+            print(f"Error: Fixture file not found at {fixture_path}")
+            continue
 
-    try:
-        with open(fixture_path, "rb") as f:
-            files = {
-                "file": (
-                    "sample.docx",
-                    f,
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                )
-            }
-            response = requests.post("http://api:8000/upload", files=files)
+        try:
+            with open(fixture_path, "rb") as f:
+                files = {
+                    "file": (
+                        filename,
+                        f,
+                        mime_type,
+                    )
+                }
+                print(f"Uploading {filename}...")
+                response = requests.post("http://api:8000/upload", files=files)
 
-        if response.status_code == 200:
-            print("Fixture file uploaded successfully!")
-            print(response.json())
-        else:
-            print(f"Failed to upload file: {response.text}")
+            if response.status_code == 200:
+                print(f"Successfully uploaded {filename}!")
+                print(response.json())
+            else:
+                print(f"Failed to upload {filename}: {response.text}")
 
-    except Exception as e:
-        print(f"Error uploading file: {str(e)}")
+        except Exception as e:
+            print(f"Error uploading {filename}: {str(e)}")
 
 
 if __name__ == "__main__":
     print("Starting initialization script...")
     wait_for_services()
-    upload_fixture_file()
+    upload_fixture_files()
     print("Initialization complete!")

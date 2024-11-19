@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class ProcessTables(BaseAssetProcessor):
     def __init__(self):
-        super().__init__("tables", "table")
+        super().__init__("tables", "table", requires_docx=True)
 
     async def process_asset(self, file_hash: str, asset: dict, db: dict, span):
         processed_dir = self.get_processed_dir(file_hash)

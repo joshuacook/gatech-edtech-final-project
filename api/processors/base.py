@@ -116,7 +116,8 @@ class BaseAssetProcessor:
             raise HTTPException(status_code=500, detail=error_msg)
 
         finally:
-            span.end()
+            if span:
+                span.end()
 
     async def process_asset(
         self, file_hash: str, asset: Dict[str, Any], db: Any, span: Any

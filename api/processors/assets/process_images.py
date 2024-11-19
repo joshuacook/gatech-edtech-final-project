@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 class ProcessImages(BaseAssetProcessor):
     def __init__(self):
-        super().__init__(processor_name="images", processor_type="images")
+        super().__init__(
+            processor_name="images", processor_type="images", requires_docx=True
+        )
 
     async def process_asset(
         self, file_hash: str, asset: Dict[str, Any], db: Any, span: Any
