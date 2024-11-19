@@ -25,6 +25,7 @@ import {
   ToastDescription,
   ToastClose,
 } from '@/components/ui/toast';
+import LaTeXViewer from "@/components/MarkdownLatexViewer";
 
 const statusColors = {
   uploaded: 'bg-blue-100 text-blue-800',
@@ -73,7 +74,7 @@ const FileContentModal = ({ isOpen, onClose, file }) => {
             </div>
           ) : (
             <pre className="text-sm whitespace-pre-wrap font-mono bg-muted p-4 rounded-lg">
-              {content}
+              <LaTeXViewer content={content} />
             </pre>
           )}
         </ScrollArea>

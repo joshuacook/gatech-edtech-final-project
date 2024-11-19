@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -88,8 +89,11 @@ class ProcessRefined(BaseAssetProcessor):
     async def _process_pdf(self, file_path: str, asset: dict, file_hash: str) -> Dict:
         """Process a PDF file using multiple Marker API endpoints"""
         # First get the main content and images using marker endpoint
-        marker_result = await self._process_with_marker_api(file_path, asset)
-
+        marker_result = await self._process_with_marker_api(
+            file_path,
+            asset,
+            headers={"X-Api-Key": os.getenv("MARKER_API_KEY")},
+        )
         # Then get table data using table_rec endpoint
         table_result = await self._process_tables(file_path)
 
@@ -177,3 +181,60 @@ class ProcessRefined(BaseAssetProcessor):
                 )
 
         raise Exception(f"Marker API request timed out after {max_polls} attempts")
+
+    async def _save_images(self, images: dict, images_dir: str) -> dict:
+        """Save images to disk and return mapping of image names to paths"""
+        image_paths = {}
+        for name, data in images.items():
+            ext = os.path.splitext(name)[1] or ".png"
+            path = os.path.join(images_dir, f"{name}{ext}")
+            # Convert base64 string to bytes if needed
+            if isinstance(data, str):
+                import base64
+
+                data = base64.b64decode(data)
+            with open(path, "wb") as f:
+                f.write(data)
+            image_paths[name] = path
+        return image_paths
+
+    async def _process_tables(self, file_path: str, max_wait: int = 600) -> Dict:
+        """Process PDF tables using table recognition API with exponential backoff"""
+        base_url = "https://www.datalab.to/api/v1/tablerec"
+        headers = {"X-Api-Key": os.getenv("MARKER_API_KEY")}
+        retryable_codes = {
+            520,
+            429,
+            503,
+        }  # CloudFlare error, rate limit, service unavailable
+
+        wait = 1
+        start = time.time()
+
+        while (time.time() - start) < max_wait:
+            try:
+                with open(file_path, "rb") as f:
+                    files = {"file": f}
+                    response = requests.post(base_url, files=files, headers=headers)
+
+                if response.ok:
+                    return response.json()
+
+                if response.status_code not in retryable_codes:
+                    logger.warning(f"Non-retryable error {response.status_code}")
+                    return {
+                        "pages": [],
+                        "error": f"Table recognition unavailable: {response.status_code}",
+                    }
+
+                logger.warning(
+                    f"Retryable error {response.status_code}, waiting {wait}s"
+                )
+                await asyncio.sleep(wait)
+                wait = min(wait * 2, 60)
+
+            except Exception as e:
+                logger.warning(f"Table recognition error: {str(e)}")
+                return {"pages": [], "error": str(e)}
+
+        return {"pages": [], "error": f"Table recognition timed out after {max_wait}s"}
