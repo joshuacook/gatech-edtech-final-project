@@ -1,83 +1,109 @@
-# api/routers/chat.py
-
+import base64
 import logging
 import os
 import re
-from typing import Dict, Union
+from typing import Dict, List, Optional, Union
 
-from anthropic import AnthropicBedrock
-from fastapi import APIRouter, HTTPException, Request
-from models.chat import ChatRequest, ChatResponse
+from anthropic import Anthropic
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
 chat_router = APIRouter()
 
-CLIENT = AnthropicBedrock(
-    aws_access_key=os.getenv("aws_access_key_id"),
-    aws_secret_key=os.getenv("aws_secret_access_key"),
+CLIENT = Anthropic(
+    api_key=os.getenv("ANTHROPIC_API_KEY"),
 )
-MODEL_ID = "anthropic.claude-3-sonnet-20240229-v1:0"
+MODEL_ID = "claude-3-sonnet-20240229"
+
+
+class ImageContent(BaseModel):
+    type: str = "image"
+    source: Dict[str, str] = Field(
+        ...,
+        example={
+            "type": "base64",
+            "media_type": "image/jpeg",
+            "data": "base64_encoded_string",
+        },
+    )
+
+
+class TextContent(BaseModel):
+    type: str = "text"
+    text: str
+
+
+class Message(BaseModel):
+    role: str
+    content: Union[str, List[Union[ImageContent, TextContent]]]
+
+
+class ChatRequest(BaseModel):
+    query: Optional[str] = None
+    messages: Optional[List[Message]] = None
+    expect_json: bool = False
+
+
+class ChatResponse(BaseModel):
+    message: str
+    json: Optional[Dict] = None
+    error: Optional[str] = None
+    raw_content: Optional[str] = None
 
 
 def extract_json_from_markdown(text: str) -> str:
     """Extract JSON content from markdown code blocks"""
-    logger.debug(
-        f"Attempting to extract JSON from: {text[:200]}..."
-    )  # Log first 200 chars
-
     json_pattern = r"```(?:json)?\n([\s\S]*?)\n```"
     matches = re.findall(json_pattern, text)
+    return matches[0] if matches else text
 
-    if matches:
-        logger.debug(f"Found JSON in markdown. First match: {matches[0][:200]}...")
-        return matches[0]
 
-    logger.debug("No JSON markdown blocks found, returning original text")
-    return text
+def encode_image_to_base64(image_data: bytes, media_type: str) -> str:
+    """Convert image bytes to base64 string"""
+    return base64.b64encode(image_data).decode("utf-8")
 
 
 def chat_call(
-    query: str, messages: list[dict] = None, expect_json: bool = False
+    query: Optional[str] = None,
+    messages: Optional[List[Message]] = None,
+    expect_json: bool = False,
 ) -> Union[Dict[str, str], Dict[str, Union[str, dict]]]:
-    """
-    Make a chat API call with optional JSON response handling.
-    """
+    """Make a chat API call with support for multimodal content"""
     if messages is None:
         messages = []
-    messages.append({"role": "user", "content": query})
+
+    anthropic_messages = []
+    for msg in messages:
+        if isinstance(msg.content, str):
+            anthropic_messages.append({"role": msg.role, "content": msg.content})
+        else:
+            # Handle multimodal content
+            anthropic_messages.append({"role": msg.role, "content": msg.content})
+
+    if query:
+        anthropic_messages.append({"role": "user", "content": query})
 
     try:
-        logger.debug("Making API call to Anthropic...")
         response = CLIENT.messages.create(
             max_tokens=4096,
-            messages=messages,
+            messages=anthropic_messages,
             model=MODEL_ID,
         )
 
         message_text = response.content[0].text
-        logger.debug(
-            f"Received response: {message_text[:200]}..."
-        )  # Log first 200 chars
 
         if not expect_json:
-            logger.debug("JSON parsing not requested, returning raw message")
             return {"message": message_text}
 
-        # Handle JSON parsing if requested
         try:
-            logger.debug("Attempting to parse JSON response")
             cleaned_json = extract_json_from_markdown(message_text)
             import json
 
             parsed_json = json.loads(cleaned_json)
-            logger.debug("Successfully parsed JSON")
             return {"message": message_text, "json": parsed_json}
         except json.JSONDecodeError as e:
-            logger.error(f"JSON parsing failed: {str(e)}")
-            logger.error(
-                f"Failed content: {cleaned_json[:200]}..."
-            )  # Log problematic content
             return {
                 "message": message_text,
                 "error": f"Failed to parse JSON response: {str(e)}",
@@ -91,8 +117,76 @@ def chat_call(
 
 @chat_router.post("/chat", response_model=ChatResponse)
 async def chat(request: Request, chat_request: ChatRequest):
-    messages = chat_request.messages or []
-    response_text = chat_call(messages=messages, query=chat_request.query)
-    if "error" in response_text:
-        raise HTTPException(status_code=500, detail=response_text["error"])
-    return ChatResponse(message=response_text["message"])
+    """Standard chat endpoint for text-only messages"""
+    try:
+        response = chat_call(
+            query=chat_request.query,
+            messages=chat_request.messages,
+            expect_json=chat_request.expect_json,
+        )
+
+        if "error" in response:
+            raise HTTPException(status_code=500, detail=response["error"])
+
+        return ChatResponse(
+            message=response["message"],
+            json=response.get("json"),
+            error=response.get("error"),
+            raw_content=response.get("raw_content"),
+        )
+    except Exception as e:
+        logger.error(f"Chat endpoint error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@chat_router.post("/chat/with-image", response_model=ChatResponse)
+async def chat_with_image(
+    image: UploadFile = File(...),
+    query: str = Form(...),
+    previous_messages: str = Form(default="[]"),  # JSON string of previous messages
+):
+    """Endpoint that handles image upload with the chat message"""
+    try:
+        # Read and encode the image
+        image_data = await image.read()
+        media_type = image.content_type or "image/jpeg"
+        base64_image = encode_image_to_base64(image_data, media_type)
+
+        # Parse previous messages
+        import json
+
+        prev_messages = json.loads(previous_messages)
+
+        # Create the new message with image
+        new_message = Message(
+            role="user",
+            content=[
+                ImageContent(
+                    source={
+                        "type": "base64",
+                        "media_type": media_type,
+                        "data": base64_image,
+                    }
+                ),
+                TextContent(text=query),
+            ],
+        )
+
+        # Combine previous messages with new message
+        all_messages = [Message(**msg) for msg in prev_messages] + [new_message]
+
+        # Make the API call
+        response = chat_call(messages=all_messages)
+
+        if "error" in response:
+            raise HTTPException(status_code=500, detail=response["error"])
+
+        return ChatResponse(
+            message=response["message"],
+            json=response.get("json"),
+            error=response.get("error"),
+            raw_content=response.get("raw_content"),
+        )
+    except Exception as e:
+        logger.error(f"Chat with image endpoint error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
