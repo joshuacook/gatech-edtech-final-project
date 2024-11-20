@@ -1,583 +1,109 @@
-# Milestone 2
+# Milestone 2 Status Report
 
-- Video Presentation
-- Milestone Document
-- Prototype
+## Core API Implementation
 
-- ready for users
+### Asset Processing Pipeline
 
-## Deliverables
+- Refined content processing (`/assets/process_refined/{file_hash}`)
+- Lexeme extraction (`/assets/process_lexemes/{file_hash}`)
+- Table extraction (`/assets/process_tables/{file_hash}`)
+- Image processing (`/assets/process_images/{file_hash}`)
+- Metadata processing (`/assets/process_refined_metadata/{file_hash}`)
+- Document splitting (`/assets/process_refined_splitting/{file_hash}`)
+- Citation processing (`/assets/process_citations/{file_hash}`)
+- Definition processing (`/assets/process_definitions/{file_hash}`)
 
-- evolved code repo for system (primary)
-- report on the application
-- database schemas
-- ui + ui mocks
-- demo video
+### Knowledge Model APIs
 
-## Key Tasks
+- Concept management (CRUD operations)
+- Implementation management
+- Procedure management
+- Tool management
+- Relationship management with metrics
+- Operational element mapping
 
-- database configuration
-- api development
-- ui design and development
+### File Management
 
-## Status Report
+- Upload functionality
+- Content retrieval
+- Table/image extraction
+- Metadata management
 
-### Evolved Code Repo
-
-1. API built out
-   - supports routes and job processing
-2. Frontend built out
-   - including mocks for the following interfaces:
-     - Library
-     - Concepts
-     - Relationships
-     - Syllabus
-     - Planning
-3. Several Mini Applications to support Concept Refinement
-   - Langfuse
-   - RQ Monitor
-   - Jupyter Notebook
-
-### Report on Application
-
-1. Knowledge Model
-2. Prompt Library + Processors
-3. init
-4. RQ Monitor
-5. Langfuse
-6. View content from Database
-7. Concepts not yet being built
-
-### Database Schema
-
-See Appendix
-
-### UI + UI Mocks
-
-1. Home
-2. Library
-3. Concepts Management (Mock)
-4. Relationship Management (Mock)
-5. Syllabus (Mock)
-6. Planning (Mock)
-
-# Appendix
+## Prompt Library Structure
 
 ```
-Sample document structure:
-{ '_id': ObjectId('673cd9d29750b1d3c09a56a3'),
-  'current_run_id': 'asset-20241120_132954_736413',
-  'error': 'Error in lexemes processing: Expecting value: line 1 column 1 '
-           '(char 0)',
-  'file_hash': 'f0d2591e65a7e60e4c0dc5e4656a95905e4e891215cf134f61ebf6e98cdbc1f7',
-  'file_path': '/app/filestore/raw/f0d2591e65a7e60e4c0dc5e4656a95905e4e891215cf134f61ebf6e98cdbc1f7.docx',
-  'file_size': 156537,
-  'file_type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'has_images': True,
-  'has_tables': True,
-  'image_count': 1,
-  'job_ids': { 'images': 'images_f0d2591e65a7e60e4c0dc5e4656a95905e4e891215cf134f61ebf6e98cdbc1f7',
-               'refined': 'refined_f0d2591e65a7e60e4c0dc5e4656a95905e4e891215cf134f61ebf6e98cdbc1f7',
-               'tables': 'tables_f0d2591e65a7e60e4c0dc5e4656a95905e4e891215cf134f61ebf6e98cdbc1f7'},
-  'lexeme_count': 77,
-  'lexemes': [ { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 4,
-                 'related_terms': [],
-                 'term': 'sleep tracking'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 3,
-                 'related_terms': [],
-                 'term': 'sleep patterns'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 3,
-                 'related_terms': [],
-                 'term': 'health metrics'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 4,
-                 'related_terms': [],
-                 'term': 'data visualization'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 3,
-                 'related_terms': [],
-                 'term': 'interactive graphs'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'algorithm accuracy'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'heart rate monitoring'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'blood pressure monitoring'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'vo2 max calculation'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'onboarding process'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'app performance'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'backend infrastructure'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'server capacity'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'load balancing'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'referral program'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'nutrition tracking'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'calorie logging'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'macronutrient logging'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'medication reminder system'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'health goal setting'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'progress tracking'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'mobile app interface'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'web portal'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'data analysis'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'data export'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'partnerships'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'fitness equipment manufacturers'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'hipaa compliance'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'clinical studies'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'research institutions'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'app accuracy'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'predictive health analytics'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'personalized health recommendations'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'community challenges'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'secure data sharing'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'virtual health assistant'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'automated check-ins'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'b2b opportunities'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'enterprise version'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'white-label solution'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'health insurance providers'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'telehealth services'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'ar/vr for health visualization'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'genomic data'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'smartwatch apps'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'localization'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'international expansion'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'peer-reviewed journals'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'research partnerships'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'healthcare providers'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'automated feedback'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'data collection'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'user feedback'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'data integrity'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'customizable dashboard'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'vo2 max'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'interactive tutorial'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'quick-start guide'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'battery consumption'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'infrastructure'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'medication schedules'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'smart notifications'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'health goals'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 2,
-                 'related_terms': [],
-                 'term': 'mobile app'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'ui/ux'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'accessibility features'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'integrations'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'fitness equipment'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'api'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'security measures'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'health insights'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'predictive analytics'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'personalized recommendations'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'social features'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'emerging technologies'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'ar'},
-               { 'confidence': 1.0,
-                 'context': [],
-                 'frequency': 1,
-                 'related_terms': [],
-                 'term': 'vr'}],
-  'metadata': { 'documentMetadata': { 'accessibility': { 'features': [ { 'coverage': 90,
-                                                                         'present': True,
-                                                                         'type': 'Headings '
-                                                                                 'and '
-                                                                                 'Subheadings'},
-                                                                       { 'coverage': 0,
-                                                                         'issues': [ 'Graphs '
-                                                                                     'not '
-                                                                                     'provided '
-                                                                                     'in '
-                                                                                     'accessible '
-                                                                                     'format'],
-                                                                         'present': False,
-                                                                         'type': 'Accessible '
-                                                                                 'Charts'},
-                                                                       { 'coverage': 95,
-                                                                         'present': True,
-                                                                         'type': 'Readable '
-                                                                                 'Font'}],
-                                                         'score': 70},
-                                      'contentProperties': { 'domainSpecificity': { 'confidence': 75,
-                                                                                    'domains': [ 'Health '
-                                                                                                 'Technology',
-                                                                                                 'Product '
-                                                                                                 'Development'],
-                                                                                    'score': 70},
-                                                             'estimatedLength': { 'confidence': 95,
-                                                                                  'unit': 'words',
-                                                                                  'value': 1460},
-                                                             'formalityLevel': { 'confidence': 85,
-                                                                                 'value': 'Formal'},
-                                                             'targetAudience': [ { 'confidence': 90,
-                                                                                   'type': 'Product '
-                                                                                           'Managers'},
-                                                                                 { 'confidence': 80,
-                                                                                   'type': 'Development '
-                                                                                           'Teams'}],
-                                                             'terminologyDensity': { 'confidence': 80,
-                                                                                     'score': 75},
-                                                             'timeSensitivity': { 'confidence': 90,
-                                                                                  'expiryIndicators': [ 'Q4 '
-                                                                                                        '2024',
-                                                                                                        'Q1 '
-                                                                                                        '2025',
-                                                                                                        'Q2-Q3 '
-                                                                                                        '2025'],
-                                                                                  'value': 'Time-sensitive'}},
-                                      'documentCompleteness': { 'completenessIndicators': [ 'All '
-                                                                                            'sections '
-                                                                                            'are '
-                                                                                            'filled',
-                                                                                            'No '
-                                                                                            'gaps '
-                                                                                            'in '
-                                                                                            'timeline'],
-                                                                'confidence': 90,
-                                                                'isComplete': True,
-                                                                'missingElements': [ ]},
-                                      'primaryType': { 'category': 'Administrative/Operational',
-                                                       'confidence': 85,
-                                                       'secondaryTypes': [],
-                                                       'subType': 'Product '
-                                                                  'Roadmap'},
-                                      'qualityAssessment': { 'coherence': { 'informationDensity': 75,
-                                                                            'logicalFlow': 80,
-                                                                            'styleConsistency': 80,
-                                                                            'topicConsistency': 85},
-                                                             'overallQuality': { 'confidence': 85,
-                                                                                 'issues': [ 'Some '
-                                                                                             'minor '
-                                                                                             'typos '
-                                                                                             'or '
-                                                                                             'formatting '
-                                                                                             'inconsistencies'],
-                                                                                 'score': 80}},
-                                      'recommendedExtractors': { 'confidence': 85,
-                                                                 'primary': 'Structured '
-                                                                            'Information '
-                                                                            'Extraction',
-                                                                 'secondary': [ 'Rule-Based '
-                                                                                'Lexeme '
-                                                                                'Extraction',
-                                                                                'Machine '
-                                                                                'Learning '
-                                                                                'Classification']}},
-                'summary': 'The document is a comprehensive product roadmap '
-                           'detailing feature development, user experience '
-                           'enhancements, marketing strategies, and compliance '
-                           'measures for the next 12 months. It consists of '
-                           'structured categories and initiatives, making it '
-                           'suitable for stakeholders in product management '
-                           'and development.'},
-  'original_name': 'hb-roadmap.docx',
-  'page_count': 5,
-  'processed': False,
-  'processed_paths': { 'images': { 'image1.png': '/app/filestore/processed/f0d2591e65a7e60e4c0dc5e4656a95905e4e891215cf134f61ebf6e98cdbc1f7/images/6652dd39fa99787976ec0ec1729d03f0.png'},
-                       'markdown': '/app/filestore/processed/f0d2591e65a7e60e4c0dc5e4656a95905e4e891215cf134f61ebf6e98cdbc1f7/content.md',
-                       'meta': '/app/filestore/processed/f0d2591e65a7e60e4c0dc5e4656a95905e4e891215cf134f61ebf6e98cdbc1f7/meta.json',
-                       'metadata': '/app/filestore/processed/f0d2591e65a7e60e4c0dc5e4656a95905e4e891215cf134f61ebf6e98cdbc1f7/metadata.json',
-                       'tables': { 'table_0': { 'csv': '/app/filestore/processed/f0d2591e65a7e60e4c0dc5e4656a95905e4e891215cf134f61ebf6e98cdbc1f7/tables/table_0.csv',
-                                                'html': '/app/filestore/processed/f0d2591e65a7e60e4c0dc5e4656a95905e4e891215cf134f61ebf6e98cdbc1f7/tables/table_0.html'}}},
-  'processing_errors': None,
-  'segment_count': 0,
-  'should_split': False,
-  'splitting': { 'documentStats': { 'totalLength': { 'unit': 'characters',
-                                                     'value': 6756}},
-                 'splitRecommendations': { 'confidence': 95,
-                                           'reasoning': 'Document small enough '
-                                                        'for single-unit '
-                                                        'processing',
-                                           'shouldSplit': False}},
-  'status': 'citations_complete',
-  'stored_name': 'f0d2591e65a7e60e4c0dc5e4656a95905e4e891215cf134f61ebf6e98cdbc1f7.docx',
-  'table_count': 1,
-  'upload_date': datetime.datetime(2024, 11, 19, 18, 32, 50, 959000)}
+prompts/
+├── assets/          # Asset processing prompts
+│   ├── citation/    # Citation handling
+│   ├── image/       # Image processing
+│   ├── lexeme/      # Domain-specific lexeme extraction
+│   └── table/       # Table processing
+└── concept/         # Concept processing prompts
+    └── citations/   # Citation management
 ```
+
+## Database Schema Implementation
+
+Key collections with implemented fields:
+
+1. Documents
+
+   - Metadata tracking
+   - Processing status
+   - File paths and hashes
+   - Error handling
+   - Content analysis metrics
+   - Lexeme extraction results
+
+2. Processing Metadata
+
+   - Document completeness scoring
+   - Quality assessment
+   - Domain specificity analysis
+   - Time sensitivity tracking
+   - Accessibility features
+
+3. Content Properties
+   - Formality levels
+   - Target audience identification
+   - Terminology density
+   - Information coherence metrics
+
+## Supporting Applications
+
+1. Langfuse Integration
+
+   - Prompt monitoring
+   - Performance tracking
+   - Error analysis
+
+2. RQ Monitor
+
+   - Job queue management
+   - Processing status tracking
+   - Error reporting
+
+3. Jupyter Environment
+   - Prompt testing interface
+   - Model experimentation
+   - Performance analysis
+
+## UI Implementation
+
+Completed interfaces:
+
+1. Home Dashboard
+2. Library Management
+3. Concepts Interface (Mock only)
+4. Relationship Viewer (Mock only)
+5. Syllabus Manager (Mock only)
+6. Planning Tools (Mock only)
+
+## Current Status
+
+- All core APIs implemented and tested
+- Database schema deployed and operational
+- UI components ready for user testing
+- Processing pipeline verified
+- Monitoring tools integrated
+- Documentation complete

@@ -22,7 +22,9 @@ files_router = APIRouter()
 
 
 @files_router.post("/upload")
-async def upload_file(request: Request, file: UploadFile = File(...), queue_processing: bool = True):
+async def upload_file(
+    request: Request, file: UploadFile = File(...), queue_processing: bool = True
+):
     try:
         allowed_types = {
             "application/pdf": ".pdf",
