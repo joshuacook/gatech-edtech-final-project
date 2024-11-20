@@ -1,17 +1,28 @@
 // app/page.tsx
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Brain, Book, Link, Cog, FileText, FolderOpen } from 'lucide-react'
+import { Book, Link, FileText, FolderOpen, Pencil, GraduationCap } from 'lucide-react'
 
 const components = [
+  {
+    icon: <FolderOpen className="w-8 h-8" />,
+    title: "Library",
+    description: "Browse and manage uploaded files",
+    href: "/library",
+    features: [
+      "Document organization",
+      "Metadata extraction",
+      "Content processing"
+    ]
+  },
   {
     icon: <Book className="w-8 h-8" />,
     title: "Concepts Management",
     description: "Define and organize organizational knowledge",
     href: "/concepts",
     features: [
-      "Manage definitions and citations",
-      "Track understanding levels",
-      "Maintain knowledge hierarchy"
+      "Concept definitions",
+      "Understanding levels",
+      "Concept refinement"
     ]
   },
   {
@@ -22,52 +33,38 @@ const components = [
     features: [
       "Visual knowledge networks",
       "Relationship mapping",
-      "Connection strength tracking"
+      "Concept hierarchies"
     ]
   },
   {
-    icon: <Cog className="w-8 h-8" />,
-    title: "Operational Elements",
-    description: "Implement concepts in practical contexts",
-    href: "/operations",
+    icon: <GraduationCap className="w-8 h-8" />,
+    title: "Syllabus",
+    description: "Course structure and curriculum planning",
+    href: "/syllabus",
     features: [
-      "Procedures documentation",
-      "Tools integration",
-      "Implementation validation"
+      "Course objectives",
+      "Weekly schedule",
+      "Learning outcomes"
     ]
   },
   {
-    icon: <FileText className="w-8 h-8" />,
-    title: "File Upload",
-    description: "Upload and process documents",
-    href: "/upload",
+    icon: <Pencil className="w-8 h-8" />,
+    title: "Planning",
+    description: "Lesson planning and materials preparation",
+    href: "/planning",
     features: [
-      "Multiple file formats",
-      "Automatic processing",
-      "Content extraction"
-    ]
-  },
-  {
-    icon: <FolderOpen className="w-8 h-8" />,
-    title: "File Browser",
-    description: "Browse and manage uploaded files",
-    href: "/files",
-    features: [
-      "File organization",
-      "Quick preview",
-      "Processing status"
+      "Lesson objectives",
+      "Activity planning",
+      "Resource preparation"
     ]
   }
-]
+];
 
 export default function HomePage() {
   return (
     <div className="p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex items-center space-x-4">
-          <Brain className="w-12 h-12" />
-          <h1 className="text-4xl font-bold">Knowledge Management</h1>
-        </div>
+        <h1 className="text-4xl font-bold">Knowledge Management</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {components.map((component) => (
@@ -99,5 +96,5 @@ export default function HomePage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

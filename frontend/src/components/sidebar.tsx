@@ -25,6 +25,11 @@ const routes = [
     href: "/",
   },
   {
+    name: "Library",
+    icon: FolderOpen,
+    href: "/library",
+  },
+  {
     name: "Concepts",
     icon: Book,
     href: "/concepts",
@@ -39,16 +44,6 @@ const routes = [
   //   icon: Cog,
   //   href: "/operations",
   // },
-  {
-    name: "Upload",
-    icon: FileText,
-    href: "/upload",
-  },
-  {
-    name: "Files",
-    icon: FolderOpen,
-    href: "/files",
-  },
   {
     name: "Syllabus",
     icon: GraduationCap,

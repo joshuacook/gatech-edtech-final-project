@@ -1,7 +1,7 @@
-DIRS ?= api # prompts/concept
-FILES ?= mongo-init.js docker-compose.yml nginx.conf frontend/next.config.ts
+DIRS ?= frontend/src
+FILES ?= # mongo-init.js docker-compose.yml nginx.conf frontend/next.config.ts
 
-IGNORE_DIRS ?= .git node_modules __pycache__ .DS_Store .ipynb_checkpoints
+IGNORE_DIRS ?= .git node_modules __pycache__ .DS_Store .ipynb_checkpoints frontend/src/components/ui 
 IGNORE_FILES ?= *.pyc *.pyo *.ico *.woff *.woff2 *.ttf *.eot *.svg *.png *.jpg *.jpeg *.gif *.ipynb
 comma := ,
 space := $(empty) $(empty)
@@ -45,6 +45,16 @@ npm-install-%:
 	cd frontend && npm install $* --save
 	docker exec -i $(FRONTEND_CONTAINER) npm install $*
 
+DIRS ?= frontend/src
+FILES ?= # mongo-init.js docker-compose.yml nginx.conf frontend/next.config.ts
+
+IGNORE_DIRS ?= .git node_modules __pycache__ .DS_Store .ipynb_checkpoints frontend/src/components/ui
+IGNORE_FILES ?= *.pyc *.pyo *.ico *.woff *.woff2 *.ttf *.eot *.svg *.png *.jpg *.jpeg *.gif *.ipynb
+comma := ,
+space := $(empty) $(empty)
+TMP_FILE := $(shell mktemp)
+FRONTEND_CONTAINER := $(shell docker-compose ps -q frontend)
+
 cat-current-files:
 	@> $(TMP_FILE)
 	@echo "Processing files..."
@@ -64,7 +74,7 @@ cat-current-files:
 		if [ -d "$$dir" ]; then \
 			echo "Scanning directory: $$dir"; \
 			find "$$dir" -type f \
-				$(foreach dir,$(IGNORE_DIRS),-not -path "*/$(dir)/*") \
+				$(foreach dir,$(IGNORE_DIRS),! -path "*/$$(basename $(dir))/*") \
 				$(foreach pattern,$(IGNORE_FILES),-not -name "$(pattern)") \
 				-print0 | while IFS= read -r -d '' file; do \
 					echo "Adding: $$file"; \
