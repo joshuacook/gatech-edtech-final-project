@@ -22,17 +22,7 @@ logger = logging.getLogger(__name__)
 chat_router = APIRouter()
 
 
-class ChatRequest(BaseModel):
-    query: Optional[str] = None
-    messages: Optional[List[Dict]] = None
-    expect_json: bool = False
-
-
-class ChatResponse(BaseModel):
-    message: str
-    result_json: Optional[Dict] = None
-    error: Optional[str] = None
-    raw_content: Optional[str] = None
+from models.chat import ChatRequest, ChatResponse
 
 
 def extract_json_from_markdown(text: str) -> str:
