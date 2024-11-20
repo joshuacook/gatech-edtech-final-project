@@ -3,7 +3,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://nginx/:path*',
+        destination: 'http://nginx:80/:path*',
       },
     ];
   },
