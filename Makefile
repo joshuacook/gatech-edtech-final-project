@@ -1,5 +1,5 @@
-DIRS ?= api frontend/src/app/files
-FILES ?= # prompts/assets/metadata.txt mongo-init.js docker-compose.yml
+DIRS ?= api # prompts/concept
+FILES ?= mongo-init.js docker-compose.yml nginx.conf frontend/next.config.ts
 
 IGNORE_DIRS ?= .git node_modules __pycache__ .DS_Store .ipynb_checkpoints
 IGNORE_FILES ?= *.pyc *.pyo *.ico *.woff *.woff2 *.ttf *.eot *.svg *.png *.jpg *.jpeg *.gif *.ipynb
@@ -33,7 +33,7 @@ logs:
 	docker-compose logs -f api frontend db | grep -v DEBUG
 
 logs-backend:
-	docker-compose logs -f api worker | grep -v DEBUG
+	docker-compose logs -f api worker nginx | grep -v DEBUG
 
 logs-frontend:
 	docker-compose logs -f frontend api | grep -v DEBUG

@@ -1,21 +1,34 @@
 import base64
+import json
 import logging
 import os
 import re
 import tempfile
+import time
 import traceback
+from functools import partial
 from typing import Dict, List, Optional, Union
 
-from anthropic import Anthropic
+import openai
+from anthropic import Anthropic, AnthropicBedrock
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from pydantic import BaseModel
+from utils.rate_limit_utils import rate_limit
 
 logger = logging.getLogger(__name__)
 
 chat_router = APIRouter()
 
-CLIENT = Anthropic()
-MODEL_ID = "claude-3-5-sonnet-latest"
+ANTHROPIC_SONNET_CLIENT = partial(Anthropic, model="claude-3-5-sonnet-latest")
+ANTHROPIC_BEDROCK_CLIENT = partial(
+    AnthropicBedrock,
+    model="anthropic.claude-3-sonnet-20240229-v1:0",
+    aws_access_key=os.getenv("aws_access_key_id"),
+    aws_secret_key=os.getenv("aws_secret_access_key"),
+)
+OPENAI_CLIENT = openai
+
+CURRENT_CLIENT = OPENAI_CLIENT
 
 
 class ChatRequest(BaseModel):
@@ -26,7 +39,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     message: str
-    json: Optional[Dict] = None
+    result_json: Optional[Dict] = None
     error: Optional[str] = None
     raw_content: Optional[str] = None
 
@@ -52,7 +65,6 @@ def sanitize_message_for_logging(msg: dict) -> dict:
     if isinstance(msg_copy.get("content"), list):
         for content in msg_copy["content"]:
             if content.get("type") == "image" and "source" in content:
-                # Handle the correct path to the base64 data
                 content["source"]["data"] = "<base64_data>"
     return msg_copy
 
@@ -62,29 +74,59 @@ def chat_call(
     messages: Optional[List[Dict]] = None,
     expect_json: bool = False,
 ) -> Union[Dict[str, str], Dict[str, Union[str, dict]]]:
-    """Make a chat API call for text-only messages"""
+    """Unified chat call interface for different clients"""
+    max_retries = 5
+    base_delay = 1
+
+    for attempt in range(max_retries):
+        try:
+            return _chat_with_client(query, messages, expect_json)
+        except Exception as e:
+            time.sleep(base_delay * (2**attempt))
+            if "429" not in str(e) or attempt == max_retries - 1:
+                raise
+
+
+def _chat_with_client(
+    query: Optional[str] = None,
+    messages: Optional[List[Dict]] = None,
+    expect_json: bool = False,
+):
+    """Helper function to route chat requests to the current client"""
+    client = CURRENT_CLIENT  # Do not call the module
     try:
-        # Handle either query or messages
         if query:
             messages = [{"role": "user", "content": query}]
         elif messages is None:
             messages = []
 
-        response = CLIENT.messages.create(
-            max_tokens=4096,
-            messages=messages,
-            model=MODEL_ID,
-        )
-
-        message_text = response.content[0].text
+        if client == openai:
+            # OpenAI API call using the new interface
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                max_tokens=4096,
+            )
+            message_text = response.choices[0].message.content
+        elif isinstance(client, partial) and client.func in [
+            Anthropic,
+            AnthropicBedrock,
+        ]:
+            # Anthropic API call
+            response = client().messages.create(
+                max_tokens=4096,
+                messages=messages,
+            )
+            # Anthropic response parsing
+            message_text = response["completion"]
+        else:
+            raise ValueError("Unsupported client type")
 
         if not expect_json:
             return {"message": message_text}
 
         try:
             cleaned_json = extract_json_from_markdown(message_text)
-            import json
-
             parsed_json = json.loads(cleaned_json)
             return {"message": message_text, "json": parsed_json}
         except json.JSONDecodeError as e:
@@ -95,34 +137,78 @@ def chat_call(
             }
 
     except Exception as e:
-        logger.error(f"Chat API call failed: {str(e)}\n{traceback.format_exc()}")
+        logger.error(f"Chat API call failed: {str(e)}")
         return {"error": str(e)}
 
 
 def multimodal_chat_call(image_path: str, query: str):
-    """Make a multimodal chat API call"""
-    message_list = [
-        {
-            "role": "user",
-            "content": [
+    """Multimodal chat using the configured client"""
+    client = CURRENT_CLIENT  # Do not call the module
+    try:
+        # Prepare the image as base64 encoded data
+        encoded_image = get_base64_encoded_image(image_path)
+
+        # Prepare the messages payload
+        if client == openai:
+            # OpenAI's API expects the query and image separately
+            messages = [
                 {
-                    "type": "image",
-                    "source": {
-                        "type": "base64",
-                        "data": get_base64_encoded_image(image_path),
-                        "media_type": "image/png",
-                    },
-                },
-                {"type": "text", "text": query},
-            ],
-        }
-    ]
-    return CLIENT.messages.create(
-        model=MODEL_ID, max_tokens=4096, messages=message_list
-    )
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": query},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{encoded_image}"
+                            },
+                        },
+                    ],
+                }
+            ]
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                max_tokens=4096,
+            )
+            message_text = response.choices[0].message.content
+        elif isinstance(client, partial) and client.func in [
+            Anthropic,
+            AnthropicBedrock,
+        ]:
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "data": encoded_image,
+                                "media_type": "image/png",
+                            },
+                        },
+                        {"type": "text", "text": query},
+                    ],
+                }
+            ]
+            response = client().messages.create(
+                max_tokens=4096,
+                messages=messages,
+            )
+            # Anthropic response parsing
+            message_text = response["completion"]
+        else:
+            raise ValueError("Unsupported client type")
+
+        return {"message": message_text}
+
+    except Exception as e:
+        logger.error(f"Multimodal chat API call failed: {str(e)}")
+        return {"error": str(e)}
 
 
 @chat_router.post("/chat", response_model=ChatResponse)
+@rate_limit(key="chat")
 async def chat(request: Request, chat_request: ChatRequest):
     """Standard chat endpoint for text-only messages"""
     try:
@@ -137,7 +223,7 @@ async def chat(request: Request, chat_request: ChatRequest):
 
         return ChatResponse(
             message=response["message"],
-            json=response.get("json"),
+            result_json=response.get("json"),
             error=response.get("error"),
             raw_content=response.get("raw_content"),
         )
@@ -147,6 +233,7 @@ async def chat(request: Request, chat_request: ChatRequest):
 
 
 @chat_router.post("/chat/with-image", response_model=ChatResponse)
+@rate_limit(key="chat_with_image")
 async def chat_with_image(
     image: UploadFile = File(...),
     query: str = Form(...),

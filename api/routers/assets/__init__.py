@@ -4,6 +4,8 @@ import logging
 
 from fastapi import APIRouter
 from langfuse import Langfuse
+from processors.assets.process_citations import ProcessCitations
+from processors.assets.process_definitions import ProcessDefinitions
 from processors.assets.process_images import ProcessImages
 from processors.assets.process_lexemes import ProcessLexemes
 from processors.assets.process_refined import ProcessRefined
@@ -29,6 +31,8 @@ processors = [
     ProcessImages(),
     ProcessRefinedMetadata(),
     ProcessRefinedSplitting(),
+    ProcessCitations(),
+    ProcessDefinitions(),
 ]
 
 # Include each processor's router

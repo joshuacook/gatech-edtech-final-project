@@ -33,7 +33,7 @@ def wait_for_services():
     attempt = 0
     while attempt < max_attempts:
         try:
-            response = requests.get("http://api:8000/")
+            response = requests.get("http://nginx:80")
             if response.status_code == 200:
                 print("API is ready!")
                 break
@@ -62,7 +62,7 @@ def upload_fixture_files():
                     )
                 }
                 print(f"Uploading {filename}...")
-                response = requests.post("http://api:8000/upload", files=files)
+                response = requests.post("http://nginx:80/upload", files=files)
 
             if response.status_code == 200:
                 print(f"Successfully uploaded {filename}!")

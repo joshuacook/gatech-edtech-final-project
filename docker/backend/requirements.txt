@@ -6,6 +6,7 @@ fitz
 instructor
 langfuse
 networkx
+openai
 plotly
 pymongo
 PyMuPDF

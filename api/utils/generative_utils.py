@@ -84,7 +84,7 @@ def retry_on_json_error(max_attempts: int = 3):
     return decorator
 
 
-def make_generative_call(prompt: str, endpoint: str = "http://api:8000/chat") -> str:
+def make_generative_call(prompt: str, endpoint: str = "http://nginx:80/chat") -> str:
     """
     Make a generative call to the chat API with standardized error handling.
 

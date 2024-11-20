@@ -124,10 +124,10 @@ class ProcessRefined(BaseAssetProcessor):
         
         Format the output with clear headings, lists, and proper spacing for optimal readability and pandoc compatibility.
 
-        Please return the markdown output only.
+        Please return EXACTLY the markdown output only with no formatting, no backticks wrapping the output.
         """
         response = multimodal_chat_call(file_path, prompt)
-        message_text = response.content[0].text
+        message_text = response["message"]
         response_data = {
             "markdown": message_text,
             "meta": {

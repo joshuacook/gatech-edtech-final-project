@@ -27,7 +27,9 @@ class AssetProcessor:
         "refined": [],
         "refined_metadata": ["refined"],
         "refined_splitting": ["refined"],
-        "lexemes": ["refined", "refined_metadata"],
+        "lexemes": ["refined_metadata"],
+        "citations": ["lexemes"],
+        "definitions": ["citations"],
     }
 
     def __init__(self, file_hash: str, processor_type: str):
@@ -73,7 +75,7 @@ class AssetProcessor:
             # Make API call to appropriate endpoint
             headers = {"X-Span-ID": span.id, "X-Run-ID": run_id}
             response = requests.post(
-                f"http://api:8000/assets/process_{processor_type}/{file_hash}",
+                f"http://nginx:80/assets/process_{processor_type}/{file_hash}",
                 headers=headers,
             )
 
