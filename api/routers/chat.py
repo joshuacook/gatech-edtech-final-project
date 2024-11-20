@@ -6,29 +6,17 @@ import re
 import tempfile
 import time
 import traceback
-from functools import partial
 from typing import Dict, List, Optional, Union
 
-import openai
-from anthropic import Anthropic, AnthropicBedrock
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from pydantic import BaseModel
+
+from config.chat_config import CURRENT_CLIENT, ChatClient
 from utils.rate_limit_utils import rate_limit
 
 logger = logging.getLogger(__name__)
 
 chat_router = APIRouter()
-
-ANTHROPIC_SONNET_CLIENT = partial(Anthropic, model="claude-3-5-sonnet-latest")
-ANTHROPIC_BEDROCK_CLIENT = partial(
-    AnthropicBedrock,
-    model="anthropic.claude-3-sonnet-20240229-v1:0",
-    aws_access_key=os.getenv("aws_access_key_id"),
-    aws_secret_key=os.getenv("aws_secret_access_key"),
-)
-OPENAI_CLIENT = openai
-
-CURRENT_CLIENT = OPENAI_CLIENT
 
 
 class ChatRequest(BaseModel):
