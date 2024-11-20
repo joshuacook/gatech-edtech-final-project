@@ -104,16 +104,24 @@ class ProcessCitations(BaseAssetProcessor):
 
     def _get_citations(self, data):
         prompt = self.read_prompt_template("citation/extraction.txt")
-        response = chat_call(
-            query=prompt + "\n\nInput:\n" + json.dumps(data), expect_json=True
-        )
+        try:
+            response = chat_call(
+                query=prompt + "\n\nInput:\n" + json.dumps(data), expect_json=True
+            )
 
-        # Handle both response formats
-        if "json" in response:
-            return response["json"]
-        else:
-            # Parse JSON from message text
-            return json.loads(response["message"])
+            # Handle both response formats
+            if isinstance(response, dict):
+                if "json" in response:
+                    return response["json"]
+                elif "message" in response:
+                    return json.loads(response["message"])
+                else:
+                    return {"citations": []}  # Fallback empty response
+            else:
+                return {"citations": []}  # Invalid response format
+        except Exception as e:
+            print(f"Error in citation extraction: {str(e)}")
+            return {"citations": []}  # Return empty citations on error
 
     def _validate_citation(self, citation, content, metadata):
         validation_data = {
@@ -121,20 +129,33 @@ class ProcessCitations(BaseAssetProcessor):
             "documents": {"processed": content, "original": None, "metadata": metadata},
         }
         prompt = self.read_prompt_template("citation/verification.txt")
-        response = chat_call(
-            query=prompt + "\n\nInput:\n" + json.dumps(validation_data),
-            expect_json=True,
-        )
+        try:
+            response = chat_call(
+                query=prompt + "\n\nInput:\n" + json.dumps(validation_data),
+                expect_json=True,
+            )
 
-        # Handle response formats
-        if "json" in response:
-            validation = response["json"]
-        else:
-            validation = json.loads(response["message"])
-
-        # Ensure required fields exist
-        return {
-            "verified": validation.get("verified", False),
-            "status": validation.get("status", "Unknown"),
-            "recommendations": validation.get("recommendations", {}),
-        }
+            # Handle response formats
+            validation = {}
+            if isinstance(response, dict):
+                if "json" in response:
+                    validation = response["json"]
+                elif "message" in response:
+                    try:
+                        validation = json.loads(response["message"])
+                    except json.JSONDecodeError:
+                        validation = {}
+            
+            # Ensure required fields exist
+            return {
+                "verified": validation.get("verified", False),
+                "status": validation.get("status", "API Error"),
+                "recommendations": validation.get("recommendations", {}),
+            }
+        except Exception as e:
+            print(f"Error in citation validation: {str(e)}")
+            return {
+                "verified": False,
+                "status": f"Validation Error: {str(e)}",
+                "recommendations": {},
+            }
