@@ -13,6 +13,7 @@ up:
 
 db:
 	docker exec -it db mongosh chelle
+	
 down:
 	docker-compose down
 
