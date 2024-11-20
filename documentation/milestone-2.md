@@ -29,7 +29,7 @@
 2. Frontend built out
    - including mocks for the following interfaces:
      - Library
-     - Concepts TODO: Accept/Refine
+     - Concepts
      - Relationships
      - Syllabus
      - Planning
