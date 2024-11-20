@@ -6,8 +6,11 @@ import re
 import tempfile
 import time
 import traceback
+from functools import partial
 from typing import Dict, List, Optional, Union
 
+import openai
+from anthropic import Anthropic, AnthropicBedrock
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 
