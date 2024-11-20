@@ -14,14 +14,12 @@ from anthropic import Anthropic, AnthropicBedrock
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 
 from config.chat_config import CURRENT_CLIENT
+from models.chat import ChatRequest, ChatResponse
 from utils.rate_limit_utils import rate_limit
 
 logger = logging.getLogger(__name__)
 
 chat_router = APIRouter()
-
-
-from models.chat import ChatRequest, ChatResponse
 
 
 def extract_json_from_markdown(text: str) -> str:
