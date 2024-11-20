@@ -1,5 +1,6 @@
 # docker/backend/requirements.txt
 
+aiohttp
 anthropic[bedrock]
 fastapi
 fitz
