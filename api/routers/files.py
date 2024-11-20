@@ -22,7 +22,7 @@ files_router = APIRouter()
 
 
 @files_router.post("/upload")
-async def upload_file(request: Request, file: UploadFile = File(...)):
+async def upload_file(request: Request, file: UploadFile = File(...), queue_processing: bool = True):
     try:
         allowed_types = {
             "application/pdf": ".pdf",
@@ -66,7 +66,8 @@ async def upload_file(request: Request, file: UploadFile = File(...)):
         result = raw_assets.insert_one(asset_record)
         logger.info(file_details)
 
-        AssetProcessor.queue_initial_processors(file_details["file_hash"])
+        if queue_processing:
+            AssetProcessor.queue_initial_processors(file_details["file_hash"])
 
         return FileResponse(
             id=str(result.inserted_id),
