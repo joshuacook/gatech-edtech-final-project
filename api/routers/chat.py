@@ -11,9 +11,8 @@ from typing import Dict, List, Optional, Union
 
 import openai
 from anthropic import Anthropic, AnthropicBedrock
-from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
-
 from config.chat_config import CURRENT_CLIENT
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from models.chat import ChatRequest, ChatResponse
 from utils.rate_limit_utils import rate_limit
 

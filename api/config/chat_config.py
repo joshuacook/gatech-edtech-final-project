@@ -1,6 +1,6 @@
 import os
 from functools import partial
-from typing import Union, Type
+from typing import Type, Union
 
 import openai
 from anthropic import Anthropic, AnthropicBedrock
