@@ -7,7 +7,7 @@ from pymongo import MongoClient
 # Define all sample files to upload
 SAMPLE_FILES = {
     # "hb-roadmap.docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    # "notes-1.png": "image/png",
+    "notes-1.png": "image/png",
     # "syllabus.pdf": "application/pdf",
 }
 

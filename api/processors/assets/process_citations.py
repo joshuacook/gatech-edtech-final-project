@@ -145,7 +145,7 @@ class ProcessCitations(BaseAssetProcessor):
                         validation = json.loads(response["message"])
                     except json.JSONDecodeError:
                         validation = {}
-            
+
             # Ensure required fields exist
             return {
                 "verified": validation.get("verified", False),
