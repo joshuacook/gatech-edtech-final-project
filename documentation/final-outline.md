@@ -46,65 +46,145 @@
 - Hallucination issues
   -Can cite: Bikeyev (2023) "Synthetic ontologies: A hypothesis"
 
-- Overview of Proposed Solution
+### Overview of Proposed Solution
 
-  - Introduction to the Chelle Knowledge Model (CKM)
-  - System architecture for knowledge processing
-  - Integration of LLMs with structured knowledge models
-  - Human-in-the-loop validation approach
-  - Scalable processing pipeline
+- Introduction to the Chelle Knowledge Model (CKM)
 
-- Contributions
-  - Novel approach to structuring LLM interactions using CKM
-  - Proof-of-concept implementation demonstrating feasibility
-  - Insights into practical challenges of LLM-based knowledge processing
-  - Framework for context-aware knowledge extraction
-  - Architectural patterns for scalable knowledge processing
+  - Mission Statement: "Chelle streamlines internal training, leading to field engineers who are continually up-to-date with company technicals, managers that are freed from creating training curricula and curating documentation, and teams that are empowered with a unified, easily accessible source of truth."
+  - Foundation: "As both a working engineer and student and teacher of applied mathematics, I have a particular interest in the development of best practices and rigor in software engineering. This is especially important working with extremely complicated systems, such as are required to deploy machine learning and artificial intelligence applications." (Matentzoglu et al., 2023)
+
+- System Architecture for Knowledge Processing
+
+  - Core Components:
+    - Knowledge Extractor Application
+    - Document Processing Models:
+      - Document Entity Extractor
+      - Document Relation Extractor
+      - Document Ontology Mapper
+  - Relevant Papers:
+    - "SPIRES: A method for populating knowledge bases using zero-shot learning" (Caufield et al., 2024)
+    - "MapperGPT: Large language models for linking and mapping entities" (Matentzoglu et al., 2023)
+
+- Integration of LLMs with Structured Knowledge Models
+
+  - Core Approach: "Our current research and development efforts center on leveraging large language models and advanced natural language processing techniques to efficiently extract, organize, and utilize knowledge from unstructured textual data, with the goal of augmenting the creation of knowledge bases for internal training and information management."
+  - Relevant Papers:
+    - "LLMs4OL: Large language models for ontology learning" (Babaei Giglou et al., 2023)
+    - "ChatIE: Zero-Shot Information Extraction via Chatting with ChatGPT" (Wei et al., 2024)
+
+- Human-in-the-Loop Validation Approach
+
+  - Trust Building: "If we are going to create robust, self-updating knowledge bases... if we are going to take this out of the hands of our users or at a minimum significantly augment their workflows, then we will need to engender trust."
+  - Relevant Paper: "Curating a domain ontology for rework in construction: challenges and learnings from practice" (Matthews et al., 2023)
+
+- Scalable Processing Pipeline
+
+  - Foundation: "Based this research analysis and internal discussions, it seems as though establishing an ontology is a fundamental first step... This ontology provides a structured framework for organizing and concepts extracted from raw source documents."
+  - Relevant Papers:
+    - "A Simple Standard for Sharing Ontological Mappings (SSSOM)" (Matentzoglu et al., 2022)
+    - "Ontology Development Kit: a toolkit for building, maintaining and standardizing biomedical ontologies" (Matentzoglu et al., 2022)
+
+### Contributions
+
+- Novel approach to structuring LLM interactions using CKM
+
+  - From Assignment 1: "My research so far has led to three primary processes or AI agents that are critical to knowledge extraction: entity extraction, entity relation, and ontology mapping. These components will work together to create ontologies for each of our customer organizations."
+  - Could cite: Matentzoglu et al. (2023) "MapperGPT: Large language models for linking and mapping entities"
+
+- Proof-of-concept implementation demonstrating feasibility
+
+  - From Assignment 3: "I believe the system I will be developing here in addition to the product that I am working on with my startup, that we can tackle these: Rapid skill obsolescence, Domain-specific knowledge and vocabulary, Manual curation"
+  - Could cite: Caufield et al. (2024) "SPIRES: A method for populating knowledge bases using zero-shot learning"
+
+- Insights into practical challenges of LLM-based knowledge processing
+
+  - From Assignment 2: "My takeaway: The more I read about Bert the more I think we should stick to the approach of not using transformers, we are a small team we should focus on delivering value which can be done most efficiently using prompting"
+  - From Assignment 3: "While it is easy to get carried away with excitement, it is also critical that we develop evaluation methodologies to assess the accuracy and reliability of these techniques."
+
+- Framework for context-aware knowledge extraction
+
+  - From Assignment 1: "We will also maintain a set of public ontologies that can be broadly leveraged."
+  - Could cite: Qiang et al. (2025) "Agent-OM: Leveraging LLM Agents for Ontology Matching"
+
+- Architectural patterns for scalable knowledge processing
+  - From Assignment 2: "All of the modern research (last two years), Sees a paradigm shift from traditional NLP to Large Language Model (LLM) based approaches."
+  - From Assignment 3: "The IEF combines quantitative metrics with qualitative insights, especially human-in-the-loop user input, and measurement of this input."
+  - Could cite: Wei et al. (2024) "ChatIE: Zero-Shot Information Extraction via Chatting with ChatGPT"
 
 ## II. The Chelle Knowledge Model (CKM)
 
 ### Overview and Motivation
 
-- Traditional knowledge bases lack context management
-- Knowledge meaning and relationships evolve with context
-- Need for formal framework to preserve semantic integrity
-- LLMs demonstrate context-sensitivity but require structure
+- **Limitations of Traditional Knowledge Bases**  
+  Traditional knowledge bases often fail to manage and preserve context effectively, leading to inefficiencies in knowledge extraction and application.
+
+  - **Knowledge Silos**: Important information is scattered across different systems and departments.
+    - Example: "Important information is often scattered across different departments, systems, versions, documents" (Assignment 2).
+  - **Disconnected Systems**: According to AIIM (2023), "74% of content systems are not connected to other business systems."
+
+- **Dynamic Nature of Knowledge**  
+  The meaning of knowledge and its relationships evolve with context, necessitating a formal framework for preserving semantic integrity.
+
+  - "The rapid growth of scientific literature outpaces manual curation efforts" (Caufield et al., 2024).
+  - Chelle addresses this by combining ontological mapping with knowledge extraction from raw documents.
+
+- **Role of LLMs**  
+  LLMs provide context-sensitive processing but require structured frameworks for reliability and semantic consistency.
+  - "LLMs have revolutionized knowledge extraction and ontology development" (Assignment 3).
 
 ### Comparison with Existing Approaches
 
-Traditional RAG: Document retrieval and LLM synthesis
-Direct KM-LLM Interface: Pre-constructed knowledge model interaction
-Key differentiators in architecture and capabilities
+- **Traditional Retrieval-Augmented Generation (RAG) Approaches**  
+  RAG methods prioritize source grounding for reliability but may lack robust ontological mapping.
+
+  - "Source grounding is important, but ontological mapping should take precedence for foundational structure" (Assignment 1).
+
+- **Direct KM-LLM Integration**  
+  Emerging methods like SPIRES leverage LLMs for zero-shot learning, enabling schema-driven knowledge base population.
+
+  - "LLMs for zero-shot learning automatically populate knowledge bases using predefined schemas" (Caufield et al., 2024).
+
+- **Unique Differentiators in CKM**  
+  CKM distinguishes itself by integrating high-recall methods with LLM-driven refinement.
+  - Example: MapperGPT combines "existing high-recall methods for candidate mappings with LLMs to refine these mappings" (Matentzoglu et al., 2023).
 
 ### Design Principles
 
-- Explicit context tracking and versioning
-- Preservation of core concept definitions
-- Formal relationship modeling across contexts
-- Computationally verifiable validation
-- Bidirectional traceability
+Core principles for CKM include:
+
+1. **Explicit Context Tracking and Versioning**
+
+   - CKM adopts robust tracking mechanisms inspired by frameworks like **LinkML**, which simplifies the production of FAIR ontology-ready data (Moxon et al., 2021).
+
+2. **Preservation of Core Concept Definitions**
+
+   - Tools like the **Ontology Development Kit (ODK)** provide standardized workflows for maintaining concept integrity (Matentzoglu et al., 2022).
+
+3. **Formal Relationship Modeling Across Contexts**
+
+   - CKM aligns with SSSOM standards for sharing ontological mappings and ensuring semantic integrity (Matentzoglu et al., 2022).
+
+4. **Trust Building through Human-in-the-Loop Validation**
+   - As CKM automates workflows, trust is engendered through transparency and user collaboration.
+     - "To create robust, self-updating knowledge bases, trust is essential" (Assignment 3).
 
 ### Core Components
 
-1. Knowledge Representation
+1. **Knowledge Representation**  
+   CKM structures knowledge into assets, assessments, and instructional frameworks, as highlighted in your differentiation:
 
-   - Base definitions independent of context
-   - Context-specific extensions and relationships
-   - Validation rules for semantic consistency
-   - Version control for knowledge evolution
+   - "Assets, Knowledge, Assessment, Instruction" (Assignment 1).
 
-2. Context Framework
+2. **Context Framework**  
+   The model addresses the exponential growth in organizational knowledge systems and repositories.
 
-   - Explicit context declaration
-   - Context hierarchy and inheritance
-   - Relationship preservation across contexts
-   - Context-specific validation rules
+   - "Organizations using multiple information systems have seen 100% growth every five years" (Assignment 2).
 
-3. Integration Layer
-   - LLM interaction patterns
-   - Context injection methods
-   - Response validation frameworks
-   - Knowledge extraction rules
+3. **Integration Layer**  
+   CKM integrates advanced LLM-NLP techniques for seamless processing, leveraging:
+   - **ChatIE Framework** (Wei et al., 2024).
+   - **SPIRES Method** (Caufield et al., 2024).
+   - **MapperGPT Approach** (Matentzoglu et al., 2023).
 
 ### Case Study: "Basis" in Linear Algebra
 
