@@ -71,6 +71,68 @@ docker-compose up --build
    - Frontend: http://localhost:8501
    - API: http://localhost:8000
 
+## System Architecture
+
+```mermaid
+graph LR
+    subgraph Frontend
+        UI[Web Interface]
+        WS[WebSocket Client]
+    end
+
+    subgraph API["API Layer"]
+        FApi[FastAPI Service]
+        Auth[Authentication]
+        Val[Validation]
+        Ctx[Context Manager]
+    end
+
+    subgraph Queue["Queue System"]
+        Redis[Redis Queue]
+        Monitor[RQ Dashboard]
+    end
+
+    subgraph Workers["Worker Nodes"]
+        W1[Worker 1]
+        W2[Worker 2]
+        W3[Worker 3]
+        W4[Worker 4]
+    end
+
+    subgraph Storage["Storage Layer"]
+        Mongo[(MongoDB)]
+        CtxStore[(Context Store)]
+        FS[File Store]
+    end
+
+    subgraph LLM["LLM Services"]
+        Claude[Claude API]
+        CtxInject[Context Injector]
+        CtxValid[Context Validator]
+    end
+
+    UI --> FApi
+    WS --> FApi
+    FApi --> Auth
+    FApi --> Val
+    FApi --> Ctx
+    Ctx --> Redis
+    Redis --> W1 & W2 & W3 & W4
+    W1 & W2 & W3 & W4 --> Mongo
+    W1 & W2 & W3 & W4 --> CtxStore
+    W1 & W2 & W3 & W4 --> FS
+    W1 & W2 & W3 & W4 --> CtxInject
+    CtxInject --> Claude
+    Claude --> CtxValid
+    CtxValid --> Mongo
+    Monitor --> Redis
+
+    classDef primary fill:#f9f,stroke:#333,stroke-width:4px
+    classDef secondary fill:#bbf,stroke:#333,stroke-width:2px
+    class FApi,Redis,Ctx primary
+    class UI,WS,Auth,Val,W1,W2,W3,W4,Mongo,FS,Claude,Monitor,CtxInject,CtxValid,CtxStore secondary
+```
+
 ## Project Structure
 
 ```
