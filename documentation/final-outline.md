@@ -216,42 +216,59 @@ This case study shows CKM's ability to:
 ## III. System Architecture
 
 - High-level system design
-  - Distributed microservices architecture
-  - Asynchronous processing model
-  - Event-driven communication
-  - Docker containerization strategy
-  - Load distribution and scaling approach
+  - Containerized microservices architecture using Docker
+  - Horizontal scaling with configurable replicas (20 API instances, 4 workers)
+  - Resource-managed deployment with CPU/memory limits
+  - NGINX reverse proxy for load balancing
+  - Development environment with hot-reload capabilities
+
 - Component overview
-  - API service
-    - FastAPI implementation
-    - RESTful endpoints for document processing
-    - WebSocket support for real-time updates
-    - Rate limiting and request validation
-    - Authentication and authorization
-  - Worker nodes
-    - Redis Queue worker implementation
-    - Parallel processing capabilities
-    - Job management and monitoring
-    - Failure handling and retry logic
-    - Resource management
+  - API service (FastAPI)
+    - Uvicorn ASGI server implementation
+    - Extended keep-alive timeout (75s)
+    - Resource limits: 1 CPU, 2GB memory per instance
+    - Volume mounts for files, prompts, and application code
+    - Environment-based configuration
+
+  - Frontend service (Next.js)
+    - Development mode with hot-reload
+    - Static file serving
+    - Node.js runtime environment
+    - Shared volume access to uploaded files
+    - Environment variable configuration
+
+  - Worker nodes (RQ)
+    - Redis Queue implementation
+    - 4 parallel worker instances
+    - Shared access to files and prompts
+    - Warning-level logging configuration
+    - Background job processing
+
   - Storage layer
-    - MongoDB document store
-    - Document versioning strategy
-    - Indexing for efficient retrieval
-    - Change data capture
-    - Backup and recovery
-  - Processing pipeline
-    - Document ingestion and parsing
-    - Lexeme extraction workflow
-    - Concept processing stages
-    - Knowledge base updates
-    - Validation queue management
+    - MongoDB database
+      - Persistent volume storage
+      - Initialization scripts support
+      - Environment-based authentication
+    - Redis for job queues and caching
+    - Local file storage for documents and prompts
+
+  - Development tools
+    - Jupyter Lab integration
+      - Interactive development environment
+      - Direct access to application code
+      - Fixture data access
+      - Token-based authentication
+    - RQ Dashboard
+      - Job monitoring interface
+      - Redis queue visualization
+      - Port 9181 web access
+
   - Integration patterns
-    - Event-driven communication via Redis
-    - RESTful service integration
-    - Webhook notifications
-    - Batch processing protocols
-    - Error handling and recovery patterns
+    - Container networking
+    - Volume sharing for file access
+    - Environment-based configuration
+    - Service dependencies management
+    - Init container for system setup
 
 ```mermaid
 graph LR
