@@ -1,3 +1,4 @@
+.PHONY : logs logs-backend logs-frontend
 DIRS ?= frontend/src
 FILES ?= # mongo-init.js docker-compose.yml nginx.conf frontend/next.config.ts
 
