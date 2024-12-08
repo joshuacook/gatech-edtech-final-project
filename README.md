@@ -26,11 +26,31 @@ Chelle Knowledge Management System is a web-based application that helps organiz
 
 ## Technology Stack
 
-- **Backend**: FastAPI + Anthropic Claude API
-- **Frontend**: Streamlit
-- **Database**: MongoDB
-- **Visualization**: Plotly, NetworkX
-- **Containerization**: Docker
+### Core Infrastructure
+- **Containerization**: Docker with configurable scaling (20 API instances, 4 workers)
+- **Load Balancing**: NGINX reverse proxy
+- **Caching & Queues**: Redis
+- **Database**: MongoDB with persistent storage
+- **Development Tools**: Jupyter Lab, RQ Dashboard
+
+### Backend Services
+- **API**: FastAPI with Uvicorn ASGI server
+- **Workers**: Python RQ (Redis Queue) for parallel processing
+- **Resource Management**: CPU/memory limits per container
+- **AI Integration**: Anthropic Claude API via AWS Bedrock
+- **Monitoring**: Langfuse for observability
+
+### Frontend
+- **Framework**: Next.js (replacing Streamlit)
+- **Real-time Updates**: WebSocket support
+- **Static Assets**: Optimized serving via NGINX
+- **Development**: Hot-reload capability
+
+### Development Environment
+- **Interactive**: Jupyter Lab integration
+- **Monitoring**: RQ Dashboard for queue visualization
+- **Dependencies**: Comprehensive Python package management
+- **Initialization**: Automated setup and fixture loading
 
 ## Installation
 
@@ -55,25 +75,28 @@ docker-compose up --build
 
 ```
 .
-├── api/
-│   ├── main.py
-│   └── routers/
-│       └── chat.py
-├── docker/
-│   ├── Dockerfile
-│   └── requirements.txt
-├── frontend/
-│   ├── Home.py
-│   ├── utils/
-│   │   └── session_state.py
-│   └── pages/
-│       ├── 1_Concepts.py
-│       ├── 2_Relationships.py
-│       └── 3_Operational_Elements.py
-└── prompts/
-    ├── concept_definer.py
-    ├── concept_identifier.py
-    └── concept_researcher.py
+├── api/                      # Backend API service
+│   ├── main.py              # FastAPI application entry
+│   ├── models/              # Pydantic models
+│   ├── routers/             # API endpoints
+│   ├── services/            # Business logic
+│   ├── jobs/               # Background job processors
+│   └── utils/              # Shared utilities
+├── docker/                  # Docker configuration
+│   ├── backend/            # API service Dockerfile
+│   └── frontend/           # Next.js Dockerfile
+├── frontend/               # Next.js frontend
+│   ├── src/               # Source code
+│   │   ├── app/          # Next.js pages
+│   │   ├── components/   # Reusable components
+│   │   └── hooks/        # Custom React hooks
+├── prompts/               # LLM prompt templates
+│   ├── concept_definer.py
+│   ├── concept_identifier.py
+│   └── concept_researcher.py
+├── filestore/             # Uploaded file storage
+├── init.py               # System initialization
+└── nginx.conf           # NGINX configuration
 ```
 
 ## Features
