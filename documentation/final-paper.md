@@ -140,6 +140,7 @@ These theoretical considerations guided our architectural decisions in the proof
 The proof-of-concept implementation of CKM was built as a containerized microservices architecture, with the following key technical decisions:
 
 1. Infrastructure Design
+
    - Docker-based containerization for all services
    - NGINX reverse proxy for load balancing and routing
    - Redis for queue management and caching
@@ -147,6 +148,7 @@ The proof-of-concept implementation of CKM was built as a containerized microser
    - Scalable API instances (20 replicas) and worker nodes (4 replicas)
 
 2. Backend Architecture
+
    - FastAPI framework for RESTful API endpoints
    - Python RQ (Redis Queue) for distributed task processing
    - Langfuse for LLM operation monitoring
@@ -154,12 +156,14 @@ The proof-of-concept implementation of CKM was built as a containerized microser
    - WebSocket support for real-time updates
 
 3. Frontend Implementation
+
    - Next.js framework replacing initial Streamlit interface
    - React components for interactive knowledge visualization
    - Real-time updates via WebSocket connections
    - Static asset optimization through NGINX
 
 4. Development Environment
+
    - Jupyter Lab integration for interactive development
    - RQ Dashboard for queue visualization
    - Hot-reload capability for rapid iteration
@@ -175,12 +179,14 @@ The proof-of-concept implementation of CKM was built as a containerized microser
 The implementation directly addresses the theoretical requirements through several key architectural decisions:
 
 1. Document Processing Requirements
+
    - Context-aware lexeme identification implemented via specialized processor classes
    - Relationship detection handled through structured prompts and validation chains
    - CKM rule validation enforced through typed model constraints
    - Processing state tracking via MongoDB document versioning
 
 2. Storage Architecture Requirements
+
    - Context preservation achieved through metadata enrichment and version control
    - Efficient retrieval enabled by MongoDB indexing on context fields
    - Change tracking implemented via event sourcing pattern
@@ -189,7 +195,6 @@ The implementation directly addresses the theoretical requirements through sever
 3. Integration Requirements
    - LLM interaction managed through structured prompt templates and validation chains
    - Worker load balancing achieved via Redis Queue with 4 worker nodes
-   - Cache management implemented through Redis with configurable eviction
    - Human validation interfaces built into the Next.js frontend components
 
 This architecture demonstrates that the theoretical CKM framework can be practically implemented, though scaling challenges remain around concurrent processing and validation chain performance.
