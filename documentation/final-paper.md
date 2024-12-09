@@ -100,19 +100,19 @@ The Chelle Knowledge Model (CKM) is founded on five fundamental design principle
 
 The CKM implements its design principles through three integrated layers:
 
-1. Knowledge Foundation Layer
+1. **Knowledge Foundation Layer**
 
 - Knowledge Representation: Manages raw assets, refined knowledge, and their relationships
 - Semantic Layer: Implements the complete relationship lattice and validation framework
 - Context Management: Handles organizational context, versioning, and knowledge evolution
 
-2. Operational Layer
+2. **Operational Layer**
 
 - Implementation Framework: Transforms abstract concepts into concrete operational elements
 - Validation System: Ensures consistency between conceptual and operational components
 - Tools & Templates: Standardized patterns for knowledge implementation
 
-3. Instruction Layer
+3. **Instruction Layer**
 
 - Assessment Framework: Measures and validates understanding levels
 - Role Management: Handles mentor/learner interactions and authority designation
@@ -122,24 +122,19 @@ Each layer maintains bidirectional traceability and implements the model's mathe
 
 ### Implementation Considerations
 
-#### Theoretical Requirements
-
-The theoretical framework of CKM translates into specific technical requirements across three key areas: document processing, storage architecture, and integration requirements. Document processing encompasses context-aware lexeme identification, relationship detection within and across contexts, and validation against formal CKM rules. The storage architecture demands context-preserving schema design, efficient indexing for context-based retrieval, version control implementation, and change tracking across contexts.
+**Theoretical Requirements** The theoretical framework of CKM translates into specific technical requirements across three key areas: document processing, storage architecture, and integration requirements. Document processing encompasses context-aware lexeme identification, relationship detection within and across contexts, and validation against formal CKM rules. The storage architecture demands context-preserving schema design, efficient indexing for context-based retrieval, version control implementation, and change tracking across contexts.
 
 Integration requirements focus on four critical aspects:
 
 - API design for LLM interaction
 - Worker load balancing for scalable processing
-- Cache management for efficient retrieval
 - Human-in-the-loop validation interfaces
 
 These theoretical considerations guided our architectural decisions in the proof-of-concept implementation described below.
 
-#### Proof-of-Concept Implementation
+**Proof-of-Concept Implementation** The proof-of-concept implementation of CKM was built as a containerized microservices architecture, with the following key technical decisions:
 
-The proof-of-concept implementation of CKM was built as a containerized microservices architecture, with the following key technical decisions:
-
-1. Infrastructure Design
+1. **Infrastructure Design**
 
    - Docker-based containerization for all services
    - NGINX reverse proxy for load balancing and routing
@@ -147,7 +142,7 @@ The proof-of-concept implementation of CKM was built as a containerized microser
    - MongoDB for persistent storage
    - Scalable API instances (20 replicas) and worker nodes (4 replicas)
 
-2. Backend Architecture
+2. **Backend Architecture**
 
    - FastAPI framework for RESTful API endpoints
    - Python RQ (Redis Queue) for distributed task processing
@@ -155,14 +150,14 @@ The proof-of-concept implementation of CKM was built as a containerized microser
    - Resource management with container-level CPU/memory limits
    - WebSocket support for real-time updates
 
-3. Frontend Implementation
+3. **Frontend Implementation**
 
    - Next.js framework replacing initial Streamlit interface
    - React components for interactive knowledge visualization
    - Real-time updates via WebSocket connections
    - Static asset optimization through NGINX
 
-4. Development Environment
+4. **Development Environment**
 
    - Jupyter Lab integration for interactive development
    - RQ Dashboard for queue visualization
@@ -170,7 +165,8 @@ The proof-of-concept implementation of CKM was built as a containerized microser
    - Comprehensive Python package management
    - Automated setup and fixture loading
 
-5. Integration Patterns
+5. **Integration Patterns**
+
    - AWS Bedrock for Claude API access
    - Structured prompts for knowledge extraction
    - Context-aware processing pipeline
@@ -178,21 +174,22 @@ The proof-of-concept implementation of CKM was built as a containerized microser
 
 The implementation directly addresses the theoretical requirements through several key architectural decisions:
 
-1. Document Processing Requirements
+1. **Document Processing Requirements**
 
    - Context-aware lexeme identification implemented via specialized processor classes
    - Relationship detection handled through structured prompts and validation chains
    - CKM rule validation enforced through typed model constraints
    - Processing state tracking via MongoDB document versioning
 
-2. Storage Architecture Requirements
+2. **Storage Architecture Requirements**
 
    - Context preservation achieved through metadata enrichment and version control
    - Efficient retrieval enabled by MongoDB indexing on context fields
    - Change tracking implemented via event sourcing pattern
    - Version control managed through immutable document patterns
 
-3. Integration Requirements
+3. **Integration Requirements**
+
    - LLM interaction managed through structured prompt templates and validation chains
    - Worker load balancing achieved via Redis Queue with 4 worker nodes
    - Human validation interfaces built into the Next.js frontend components
