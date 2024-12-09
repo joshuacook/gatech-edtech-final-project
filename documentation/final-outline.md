@@ -213,164 +213,126 @@ This case study shows CKM's ability to:
 - Preserve relationships across contexts
 - Guide LLM interactions systematically
 
-## III. System Architecture
+## III. Knowledge Processing Pipeline
 
-- High-level system design
-  - Containerized microservices architecture using Docker
-  - Horizontal scaling with configurable replicas (20 API instances, 4 workers)
-  - Resource-managed deployment with CPU/memory limits
-  - NGINX reverse proxy for load balancing
-  - Development environment with hot-reload capabilities
+**Note: detailed description of system architecture is in the README.md file**
 
-- Component overview
-  - API service (FastAPI)
-    - Uvicorn ASGI server implementation
-    - Extended keep-alive timeout (75s)
-    - Resource limits: 1 CPU, 2GB memory per instance
-    - Volume mounts for files, prompts, and application code
-    - Environment-based configuration
+## Document Processing Pipeline for Knowledge Model Implementation
 
-  - Frontend service (Next.js)
-    - Development mode with hot-reload
-    - Static file serving
-    - Node.js runtime environment
-    - Shared volume access to uploaded files
-    - Environment variable configuration
+The following describes a technical implementation of the knowledge model based on the provided diagram and document content. Each phase of the implementation integrates principles from the document, aligning processes with the outlined layers (conceptual, operational, and relationship layers).
 
-  - Worker nodes (RQ)
-    - Redis Queue implementation
-    - 4 parallel worker instances
-    - Shared access to files and prompts
-    - Warning-level logging configuration
-    - Background job processing
+---
 
-  - Storage layer
-    - MongoDB database
-      - Persistent volume storage
-      - Initialization scripts support
-      - Environment-based authentication
-    - Redis for job queues and caching
-    - Local file storage for documents and prompts
+### 1. Document Processing
 
-  - Development tools
-    - Jupyter Lab integration
-      - Interactive development environment
-      - Direct access to application code
-      - Fixture data access
-      - Token-based authentication
-    - RQ Dashboard
-      - Job monitoring interface
-      - Redis queue visualization
-      - Port 9181 web access
+This phase processes the raw input documents, identifying and classifying context to support downstream operations. The operations align with the **"Raw Asset"** and **"Refined Asset"** concepts from the knowledge model.
 
-  - Integration patterns
-    - Container networking
-    - Volume sharing for file access
-    - Environment-based configuration
-    - Service dependencies management
-    - Init container for system setup
+#### Initial Context Classification
 
-```mermaid
-graph LR
-    subgraph Frontend
-        UI[Web Interface]
-        WS[WebSocket Client]
-    end
+- **Domain Identification**: Categorize the document domain using predefined lexemes, as described in the **"Lexeme"** and **"Asset Metadata"** sections.
+- **Audience Level Detection**: Identify the audience's level of expertise (basic, intermediate, mastery) as defined in the **"Understanding Levels"**.
+- **Prerequisite Mapping**: Map necessary prior knowledge using **"Knowledge Dependencies"** and **"Definitional Dependencies"**.
+- **Teaching Sequence Position**: Determine the document’s position within the learning path using the **"Learning Path"** concept.
 
-    subgraph API["API Layer"]
-        FApi[FastAPI Service]
-        Auth[Authentication]
-        Val[Validation]
-        Ctx[Context Manager]
-    end
+---
 
-    subgraph Queue["Queue System"]
-        Redis[Redis Queue]
-        Monitor[RQ Dashboard]
-    end
+### 2. Knowledge Extraction
 
-    subgraph Workers["Worker Nodes"]
-        W1[Worker 1]
-        W2[Worker 2]
-        W3[Worker 3]
-        W4[Worker 4]
-    end
+This phase extracts meaningful knowledge elements from the document, leveraging **"Knowledge Structure"** and **"Concept"** principles.
 
-    subgraph Storage["Storage Layer"]
-        Mongo[(MongoDB)]
-        CtxStore[(Context Store)]
-        FS[File Store]
-    end
+#### Context-Aware Lexeme Identification
 
-    subgraph LLM["LLM Services"]
-        Claude[Claude API]
-        CtxInject[Context Injector]
-        CtxValid[Context Validator]
-    end
+- Extract lexemes and classify them as **"Primitive Terms"** or **"Composite Terms"**, ensuring all lexemes are computably verifiable.
 
-    UI --> FApi
-    WS --> FApi
-    FApi --> Auth
-    FApi --> Val
-    FApi --> Ctx
-    Ctx --> Redis
-    Redis --> W1 & W2 & W3 & W4
-    W1 & W2 & W3 & W4 --> Mongo
-    W1 & W2 & W3 & W4 --> CtxStore
-    W1 & W2 & W3 & W4 --> FS
-    W1 & W2 & W3 & W4 --> CtxInject
-    CtxInject --> Claude
-    Claude --> CtxValid
-    CtxValid --> Mongo
-    Monitor --> Redis
+#### Relationship Detection Within Context
 
-    classDef primary fill:#f9f,stroke:#333,stroke-width:4px
-    classDef secondary fill:#bbf,stroke:#333,stroke-width:2px
-    class FApi,Redis,Ctx primary
-    class UI,WS,Auth,Val,W1,W2,W3,W4,Mongo,FS,Claude,Monitor,CtxInject,CtxValid,CtxStore secondary
-```
+- Detect relationships between extracted lexemes, adhering to the **"Relationship Uniqueness Rule"**, ensuring one explicit relationship between any two concepts.
 
-## IV. Knowledge Processing Pipeline
+#### Cross-Context Relationship Mapping
 
-### Document Processing
+- Map relationships across different document contexts using **"Cross-Reference Rules"** and validate with **"Relationship Strength Calculations"**.
 
-- Initial context classification
-  - Domain identification
-  - Audience level detection
-  - Prerequisite mapping
-  - Teaching sequence position
+#### Context Transition Detection
 
-### Knowledge Extraction
+- Identify transitions between contexts, such as from **"Definitional Dependency"** to **"Knowledge Dependency"**, maintaining consistency.
 
-- Context-aware lexeme identification
-- Relationship detection within context
-- Cross-context relationship mapping
-- Context transition detection
-- Validation against CKM rules
+#### Validation Against CKM Rules
 
-### Context Management
+- Validate extracted knowledge and relationships against the **"Completeness Rule"**, ensuring no circular dependencies.
 
-- Context hierarchy construction
-  - Inheritance relationships
-  - Context transitions
-  - Dependency tracking
-  - Version management
+---
 
-### Storage Architecture
+### 3. Context Management
 
-- Context-preserving schema design
-- Context-based indexing
-- Relationship preservation
-- Change tracking across contexts
-- Version control implementation
+This phase organizes and manages the context extracted from documents.
 
-### Human-in-Loop Validation
+#### Context Hierarchy Construction
 
-- Context appropriateness verification
-- Relationship validation
-- Context transition review
-- Knowledge evolution approval
-- Quality metrics by context
+- Construct a hierarchy of contexts using **"Subsumption"** and **"Relationship Hierarchy"** principles.
+  - Define **inheritance relationships** to track properties passed between contexts.
+  - Manage **context transitions** and track **dependencies** across contexts.
+
+#### Version Management
+
+- Implement version control for context elements, ensuring compliance with the **"Versioning Rules"** of the knowledge model.
+
+---
+
+### 4. Storage Architecture
+
+This phase involves designing a storage system that preserves contextual integrity.
+
+#### Context-Preserving Schema Design
+
+- Design schemas for storing **"Concepts"**, **"Relationships"**, and **"Mentions"**, ensuring **referential integrity**.
+
+#### Context-Based Indexing
+
+- Create indices for efficient retrieval of knowledge by context, leveraging **"Context Transition Rules"**.
+
+#### Relationship Preservation
+
+- Preserve the **"Relationship Types"** (e.g., overlap, subsumption) within the storage layer, ensuring hierarchy consistency.
+
+#### Change Tracking Across Contexts
+
+- Track changes across contexts using **"Operational Layer Validation"** processes.
+
+#### Version Control Implementation
+
+- Implement version control for all stored elements to maintain provenance, as detailed in **"Refined Asset"** validation rules.
+
+---
+
+### 5. Human-in-the-Loop Validation
+
+This phase ensures accuracy and quality through human oversight, complementing automated processes.
+
+#### Context Appropriateness Verification
+
+- Validate the appropriateness of extracted contexts against predefined **"Knowledge Structure"** requirements.
+
+#### Relationship Validation
+
+- Confirm all relationships adhere to **"Validation Rules"**, ensuring mutual exclusivity and logical consistency.
+
+#### Context Transition Review
+
+- Review transitions between contexts to ensure **"Dependency Validation"** rules are followed.
+
+#### Knowledge Evolution Approval
+
+- Approve changes in knowledge elements based on the **"Validation Phase"** requirements.
+
+#### Quality Metrics by Context
+
+- Assess quality metrics for each context using the **"Relationship Strength Calculations"**.
+
+---
+
+### Visual Representation
+
+The following `mermaid` diagram provides a visual representation of the processing pipeline:
 
 ```mermaid
 graph TD
@@ -417,158 +379,57 @@ graph TD
     class LE,LC,LV,CD,CR,CC process
     class KB,Cache storage
     class VQ,UI,FB validation
-
 ```
 
-## V. CKM-LLM Integration
+## V. Discussion
 
-### Context-Aware Prompting
+The implementation of the knowledge processing pipeline demonstrated both promising results and revealed important technical challenges that impact system scalability. While core functionality was successfully implemented and performed well, several key insights emerged during development.
 
-- Context injection techniques
-- Context hierarchy representation
-- Prerequisite knowledge incorporation
-- Learning sequence position
-- Domain relevance signals
+### Implementation Progress and Challenges
 
-### Response Processing
+The core system functionality was successfully implemented and demonstrated effective performance. However, a significant scalability challenge emerged when processing rich documents containing numerous concepts. This bottleneck led to exploring two distinct solution paths:
 
-- Multi-context validation
-- Context-specific parsing rules
-- Relationship extraction by context
-- Cross-context consistency checks
-- Version conflict resolution
+1. Initial attempts focused on load balancing the API server to better utilize system resources
+2. Subsequently, attention shifted to worker load balancing, which proved to be the correct approach but required substantial code refactoring
 
-### Knowledge Integration
+This technical challenge and the resulting implementation iterations consumed significant development time, limiting the scope of implemented features. While concept extraction was successfully implemented, relationship extraction functionality remained unimplemented due to time constraints.
 
-- Context mapping to CKM structure
-- Relationship preservation
-- Context transition management
-- Dependency validation
-- Version control integration
+### Preliminary Results
 
-### Quality Control
+Initial results from concept extraction and definition were promising, based on ad hoc analysis of system logs. The LLM-based approach demonstrated effectiveness in identifying and defining concepts from input documents. However, it should be noted that due to development focusing on core functionality, the system's output capture mechanisms were not implemented in a way that would support rigorous research validation and presentation.
 
-- Context-specific validation rules
-- Cross-context consistency checks
-- Relationship integrity verification
-- Evolution tracking
-- Context appropriateness metrics
+### Time Constraints and Future Work
 
-### Implementation Strategy
+The primary limiting factor in this implementation was time rather than fundamental issues with the system architecture or approach. The underlying architectural decisions appear sound based on the implemented components' performance. Development of the system will continue, with particular focus on:
 
-- Context representation format
-- LLM interaction patterns
-- Response validation framework
-- Storage integration approach
-- Human review workflow
+1. Completing the relationship extraction functionality
+2. Implementing robust output capture for proper evaluation
+3. Leveraging the refactored worker load balancing system for improved scalability
 
-```mermaid
-graph TD
-    subgraph CKM["Chelle Knowledge Model"]
-        CD[Context Definitions]
-        PR[Prompt Rules]
-        VR[Validation Rules]
-    end
+The successful implementation of core functionality, despite scalability challenges, supports the viability of the overall architectural approach. Future work will build upon these foundations to realize the full potential of the system.
 
-    subgraph Processing["Processing Layer"]
-        PE[Prompt Engine]
-        CP[Context Processor]
-        RP[Response Parser]
-        QC[Quality Control]
-    end
+## VI.Conclusion
 
-    subgraph External["External Systems"]
-        LLM[LLM Service]
-        KB[(Knowledge Base)]
-        UI[User Interface]
-    end
+### Transformative Potential of Automated Ontology Creation
 
-    CD --> CP
-    PR --> PE
-    VR --> QC
-    CP --> PE
-    PE --> LLM
-    LLM --> RP
-    RP --> QC
-    QC --> KB
-    KB --> UI
-    UI --> CP
+The most significant insight from this research is not merely the automation of ontology creation through LLMs, but rather how this automation fundamentally transforms the role of ontologies in knowledge management. When ontology creation shifts from a months-long expert endeavor to a rapid, iterative process, it enables ontologies to be deployed for previously impractical use cases - much like how the accessibility of databases or notebooks has enabled their widespread adoption in diverse contexts.
 
-    classDef ckm fill:#f9f,stroke:#333,stroke-width:4px
-    classDef proc fill:#bbf,stroke:#333,stroke-width:2px
-    classDef ext fill:#bfb,stroke:#333,stroke-width:2px
-    class CD,PR,VR ckm
-    class PE,CP,RP,QC proc
-    class LLM,KB,UI ext
+### Implementation Insights
 
-```
+While the proof-of-concept implementation faced expected challenges in scaling complex machine learning systems, these challenges proved to be primarily engineering hurdles rather than fundamental limitations. The core functionality demonstrated the viability of the architectural approach, particularly in concept extraction and definition, though full relationship extraction capabilities remain to be implemented.
 
-## VI. Implementation
+### Practical Applications
 
-- Technical stack details
+The immediate practical application of this work focuses on educational contexts, specifically facilitating connections between students, teachers, and knowledge resources. This narrow but concrete focus provides a clear path for validating the approach while avoiding overextension of the system's capabilities.
 
-  - Core infrastructure
-    - Docker containerization and orchestration
-    - NGINX reverse proxy and load balancing
-    - Redis for job queues and caching
-    - MongoDB for document and knowledge storage
-  - Backend services
-    - FastAPI for high-performance API endpoints
-    - Python workers for parallel processing
-    - Jupyter integration for research and development
-    - RQ (Redis Queue) for job management
-  - Frontend
-    - Next.js for user interface
-    - Real-time updates via WebSocket
-    - Interactive document visualization
+### Future Work
 
-- Key implementation decisions
+Two critical areas require attention for advancing this work:
 
-  - Asynchronous processing model for scalability
-  - Modular prompt system for flexible LLM interaction
-  - Change data capture for knowledge base versioning
-  - Human-in-the-loop validation workflow
-  - Containerized microservices for deployment flexibility
+1. Development of robust validation methodologies to empirically demonstrate the effectiveness of automatically generated ontologies
+2. Continued refinement of the engineering infrastructure to support scalable deployment of these systems
 
-- Challenges encountered
-
-  - High-throughput parallel processing limitations
-  - Context management across multiple LLM calls
-  - Job queue optimization for large documents
-  - Resource constraints with multiple LLM requests
-  - State management across distributed system
-
-- Solutions developed
-  - Implemented worker pool with configurable scaling
-  - Developed structured prompt templating system
-  - Created batching strategy for LLM requests
-  - Built monitoring and observability tools
-  - Designed failure recovery mechanisms
-
-## VII. Discussion
-
-- System capabilities and limitations
-- Scaling considerations
-- Lessons learned
-- Future work
-
-Knowledge Model Scaling
-
-Telescoping KM implementation
-Context-aware knowledge scope management
-Performance optimization for large knowledge bases
-
-Evaluation Framework
-
-Metrics for knowledge interface effectiveness
-User interaction analysis
-System performance benchmarking
-
-## VIII. Conclusion
-
-- Summary of contributions
-- Implications for knowledge management
-- Next steps
+The successful implementation of core functionality, despite various technical challenges, supports the fundamental viability of using LLMs to transform knowledge management through rapid ontology creation and deployment. While significant work remains, particularly in validation and scaling, the potential to fundamentally change how organizations approach knowledge structuring and management appears promising.
 
 ## Appendix
 
