@@ -18,7 +18,7 @@ The knowledge management challenge encompasses several key dimensions. First, or
 
 The emergence of Large Language Models (LLMs) presents new opportunities for addressing these organizational knowledge management challenges. Recent research demonstrates that LLMs can significantly enhance knowledge extraction and ontology development processes (Babaei Giglou et al., 2023). However, effective implementation requires addressing several technical challenges, including context limitations and potential hallucination issues (Bikeyev, 2023; Wang et al., 2023).
 
-This paper presents the Chelle Knowledge Model (CKM), a novel approach to organizational knowledge management that leverages LLMs for automated knowledge extraction and organization, along with a proof-of-concept implementation demonstrating its practical application. The CKM specifically addresses the challenges of knowledge currency, accessibility, and scalability through a structured approach to knowledge processing and organization.
+This paper presents the Chelle Knowledge Model (CKM), a novel approach to organizational knowledge management that leverages LLMs for automated knowledge extraction and organization, along with a proof-of-concept implementation demonstrating its practical application. The CKM specifically addresses the challenges of knowledge currency, accessibility, and scalability through a structured approach to knowledge processing and organization. The CKM serves as a constitutional framework defining our application's approach to knowledge management. While databases and notebooks have become standard engineering tools, ontologies remain primarily in research domains. CKM represents an opinionated approach to making ontologies more accessible and practical for organizational knowledge management, providing a formal system for automating ontology creation and maintenance.
 
 The CKM framework integrates three core components for knowledge processing: entity extraction, relation extraction, and ontology mapping. This approach builds on recent advances in zero-shot learning for knowledge base population (Caufield et al., 2024) and entity mapping (Matentzoglu et al., 2023). The system employs a human-in-the-loop validation approach to ensure accuracy and build trust in automated knowledge extraction processes.
 
@@ -61,40 +61,11 @@ The Chelle Knowledge Model addresses these limitations through a structured appr
 
 The Chelle Knowledge Model (CKM) is founded on five fundamental design principles:
 
-1. **Semantic Integrity and Context Preservation**
-
-- Explicit context tracking across all knowledge transformations
-- Version control for all knowledge elements
-- Provenance tracking from raw assets through refined knowledge
-- Preservation of semantic relationships across organizational contexts
-
-2. **Mathematical Formalism**
-
-- Complete lattice structure for relationship hierarchies
-- Formal relationship classification system with precise mathematical semantics
-- Computationally verifiable constraints and validations
-- Rigorous dependency management through directed acyclic graphs
-
-3. **Operational Transparency**
-
-- Bidirectional traceability between conceptual and operational elements
-- Explicit validation requirements at every transformation step
-- Complete audit trails for all knowledge operations
-- Clear separation between raw assets and refined knowledge
-
-4. **Knowledge Evolution Management**
-
-- Structured approaches for handling concept relationships over time
-- Formal procedures for relationship validation and strength calculations
-- Systematic mapping validation across knowledge domains
-- Clear versioning and inheritance rules for knowledge structures
-
-5. **Human-in-the-Loop Validation**
-
-- Explicit roles for knowledge curation and oversight
-- Authority designation for knowledge validation
-- Systematic quality checks with human verification
-- Clear certification processes for knowledge understanding
+1. The **Semantic Integrity and Context Preservation** principle ensures all knowledge transformations maintain explicit context tracking, version control for knowledge elements, provenance tracking from raw assets through refined knowledge, and preservation of semantic relationships across organizational contexts (Cross et al., 2004, Otero et al., 2015, Matentzoglu et al., 2023).
+2. The **Mathematical Formalism** principle implements a complete lattice structure for relationship hierarchies, formal relationship classification with precise mathematical semantics, computationally verifiable constraints and validations, and rigorous dependency management through directed acyclic graphs (Heisig et al., 2016, Wang et al., 2023, Caufield et al., 2024).
+3. The **Operational Transparency** principle maintains bidirectional traceability between conceptual and operational elements, explicit validation requirements at every transformation step, complete audit trails for all knowledge operations, and clear separation between raw assets and refined knowledge (AIIM, 2023, Jackson et al., 2021, Jonquet et al., 2024).
+4. The **Knowledge Evolution Management** principle provides structured approaches for handling concept relationships over time, formal procedures for relationship validation and strength calculations, systematic mapping validation across knowledge domains, and clear versioning and inheritance rules for knowledge structures (Tamayo et al., 2023, Gartner, 2023, Taylor, 2023).
+5. The **Human-in-the-Loop Validation** principle establishes explicit roles for knowledge curation and oversight, authority designation for knowledge validation, systematic quality checks with human verification, and clear certification processes for knowledge understanding (Matthews et al., 2023, Deloitte, 2020, Qian et al., 2025).
 
 ### Core Components
 
@@ -122,7 +93,7 @@ Each layer maintains bidirectional traceability and implements the model's mathe
 
 ### Implementation Considerations
 
-**Theoretical Requirements** The theoretical framework of CKM translates into specific technical requirements across three key areas: document processing, storage architecture, and integration requirements. Document processing encompasses context-aware lexeme identification, relationship detection within and across contexts, and validation against formal CKM rules. The storage architecture demands context-preserving schema design, efficient indexing for context-based retrieval, version control implementation, and change tracking across contexts.
+**Theoretical Requirements** The theoretical framework of CKM translates into specific technical requirements across three key areas: document processing, storage architecture, and integration requirements. Document processing encompasses context-aware lexeme\footnote{A lexeme is defined in CKM as 'a unit of meaning in a language, consisting of a word or group of words.'} identification, relationship detection within and across contexts, and validation against formal CKM rules. The storage architecture demands context-preserving schema design, efficient indexing for context-based retrieval, version control implementation, and change tracking across contexts.
 
 Integration requirements focus on four critical aspects:
 
@@ -147,23 +118,16 @@ These theoretical considerations guided our architectural decisions in the proof
    - FastAPI framework for RESTful API endpoints
    - Python RQ (Redis Queue) for distributed task processing
    - Langfuse for LLM operation monitoring
-   - Resource management with container-level CPU/memory limits
-   - WebSocket support for real-time updates
 
 3. **Frontend Implementation**
 
    - Next.js framework replacing initial Streamlit interface
-   - React components for interactive knowledge visualization
-   - Real-time updates via WebSocket connections
-   - Static asset optimization through NGINX
 
 4. **Development Environment**
 
    - Jupyter Lab integration for interactive development
    - RQ Dashboard for queue visualization
    - Hot-reload capability for rapid iteration
-   - Comprehensive Python package management
-   - Automated setup and fixture loading
 
 5. **Integration Patterns**
 
@@ -184,8 +148,6 @@ The implementation directly addresses the theoretical requirements through sever
 2. **Storage Architecture Requirements**
 
    - Context preservation achieved through metadata enrichment and version control
-   - Efficient retrieval enabled by MongoDB indexing on context fields
-   - Change tracking implemented via event sourcing pattern
    - Version control managed through immutable document patterns
 
 3. **Integration Requirements**
@@ -198,7 +160,7 @@ This architecture demonstrates that the theoretical CKM framework can be practic
 
 # III. Implementation of the Knowledge Processing Pipeline
 
-The proof-of-concept implementation focused on establishing core functionality for automated knowledge extraction and concept formation using Large Language Models. The current implementation demonstrates basic pipeline functionality while revealing important technical challenges that inform future development.
+The proof-of-concept implementation focused on establishing core functionality for automated knowledge extraction and concept formation using Large Language Models. The current implementation demonstrates basic pipeline functionality while revealing important technical challenges that inform future development. All code is available on GitHub [[link]](https://github.com/joshuacook/gatech-edtech-final-project).
 
 ### Architecture Overview
 
@@ -220,7 +182,7 @@ Each processor implements a specific stage in the knowledge extraction pipeline,
 
 ### Document Processing Pipeline
 
-The current implementation successfully demonstrates several key components:
+The current implementation demonstrates basic pipeline functionality (See Appendix I for a detailed example of document processing flow).
 
 #### Document Classification and Metadata Extraction
 
@@ -287,6 +249,10 @@ graph TD
     class LF monitoring;
 ```
 
+\begin{figure}[h]
+\caption{Knowledge Processing Pipeline Architecture}
+\end{figure}
+
 ### Technical Challenges and Solutions
 
 Several significant technical challenges emerged during implementation:
@@ -332,6 +298,23 @@ The core system functionality was successfully implemented and demonstrated effe
 2. Subsequently, attention shifted to worker load balancing, which proved to be the correct approach but required substantial code refactoring
 
 Notably, the troubleshooting process led to the discovery and integration of Langfuse, a monitoring and observability solution for LLM applications. This addition to the technology stack emerged as a silver lining of the scalability challenges, providing valuable insights into LLM operation and performance that will benefit future development iterations.
+
+| Component                                       | Status      |
+| ----------------------------------------------- | ----------- |
+| Document classification and metadata extraction | Implemented |
+| Basic lexeme extraction                         | Implemented |
+| Core document processing pipeline               | Implemented |
+| API server and worker architecture              | Implemented |
+| MongoDB storage implementation                  | Implemented |
+| Redis queue management                          | Implemented |
+| Human-in-the-loop validation                    | Theoretical |
+| Relationship extraction                         | Theoretical |
+| Citation verification                           | Theoretical |
+| Concept formation                               | Theoretical |
+| Assessment framework                            | Theoretical |
+| Complete operational layer                      | Theoretical |
+| Learning structure implementation               | Theoretical |
+| Mentions system                                 | Theoretical |
 
 ### Scope Management Insights
 
@@ -385,19 +368,89 @@ The successful implementation of core functionality, despite various technical c
 
 # Appendix
 
+## Example: Technical Document Processing Flow
+
+### Input Document
+
+```
+Title: Best Practices for API Security
+Section 1: Authentication
+OAuth2 is the recommended protocol for API authentication. It provides secure delegated access through token-based authorization.
+
+Section 2: Rate Limiting
+Implement rate limiting to prevent API abuse. Consider using token bucket algorithms for flexible rate control.
+```
+
+### Processing Pipeline Steps
+
+#### 1. Document Classification & Metadata
+
+```python
+metadata = {
+    "type": "Technical",
+    "category": "Security",
+    "confidence": 0.95,
+    "source": "internal_documentation",
+    "timestamp": "2024-12-09T10:30:00Z"
+}
+```
+
+#### 2. Lexeme Extraction
+
+Identified lexemes:
+
+- "OAuth2"
+- "API authentication"
+- "token-based authorization"
+- "rate limiting"
+- "token bucket algorithms"
+
+#### 3. Citation Processing
+
+Example citation extracted:
+
+```json
+{
+  "lexeme": "OAuth2",
+  "context": "recommended protocol for API authentication",
+  "source_location": "Section 1",
+  "confidence": 0.92
+}
+```
+
+#### 4. Concept Formation
+
+Example concept generated:
+
+```json
+{
+  "lexeme": "API authentication",
+  "definition": "The process of verifying identity and access rights for API requests",
+  "related_concepts": ["OAuth2", "token-based authorization"],
+  "citations": [
+    { "source": "Section 1", "text": "OAuth2 is the recommended protocol..." }
+  ],
+  "confidence": 0.89
+}
+```
+
 ## References
 
 - Association for Intelligent Information Management (AIIM). (2023, April 20). _2023 State of the Intelligent Information Management Industry_. AIIM. https://www.aiim.org/industrywatch2023
 - Babaei Giglou, H., D’Souza, J., & Auer, S. (2023, October). LLMs4OL: Large language models for ontology learning. In International Semantic Web Conference (pp. 408-427). Cham: Springer Nature Switzerland.
 - Bikeyev, A. (2023). Synthetic ontologies: A hypothesis. Available at SSRN 4373537.
-- Caufield, J. H., Hegde, H., Emonet, V., Harris, N. L., Joachimiak, M. P., Matentzoglu, N., ... & Mungall, C. J. (2024). _Structured prompt interrogation and recursive extraction of semantics (SPIRES): A method for populating knowledge bases using zero-shot learning._ Bioinformatics, 40(3), btae104.
-- Chui, M., Manyika, J., Bughin, J., Dobbs, R., Roxburgh, C., Sarrazin, H., Sands, G., & Westergren, M. (2012, July 1). _The social economy: Unlocking value and productivity through social technologies_. McKinsey Global Institute. https://www.mckinsey.com
+- Caufield, J. H., Hegde, H., Emonet, V., Harris, N. L., Joachimiak, M. P., Matentzoglu, N., ... & Mungall, C. J. (2024). Structured prompt interrogation and recursive extraction of semantics (SPIRES): A method for populating knowledge bases using zero-shot learning. Bioinformatics, 40(3), btae104.
+- Chui, M., Manyika, J., Bughin, J., Dobbs, R., & Roxburgh, C. (2012). The social economy: Unlocking value and productivity through social technologies.
 - Cross, R., & Sproull, L. (2004). More than an answer: Information relationships for actionable knowledge. Organization science, 15(4), 446-462.
 - Deloitte. (2020). _2020 Deloitte Global Human Capital Trends: The social enterprise at work: Paradox as a path forward_. Deloitte Development LLC. https://www2.deloitte.com/content/dam/Deloitte/us/Documents/human-capital/us-2020-deloitte-global-human-capital-trends.pdf
 - Gartner, Inc. (2023, May 10). _Gartner survey reveals 47% of digital workers struggle to find the information needed to effectively perform their jobs_. https://www.gartner.com/en/newsroom/press-releases/2023-05-10-gartner-survey-reveals-47-percent-of-digital-workers-struggle-to-find-the-information-needed-to-effectively-perform-their-jobs
 - Heisig, P., Suraj, O. A., Kianto, A., Kemboi, C., Perez Arrau, G., & Fathi Easa, N. (2016). Knowledge management and business performance: global experts’ views on future research needs. Journal of Knowledge Management, 20(6), 1169-1198.
+- Jackson, R., Matentzoglu, N., Overton, J. A., Vita, R., Balhoﬀ, J. P., Buttigieg, P. L., ... &Peters, B. (2021). OBO Foundry in 2021: operationalizing open data principles to evaluate ontologies. Database, 2021, baab069.
+- Jonquet, C., & Grau, N. (2024). M4. 4-Review of Semantic Artefact Catalogues and guidelines for serving FAIR semantic artefacts in EOSC.
 - Matentzoglu, N., Caufield, J. H., Hegde, H. B., Reese, J. T., Moxon, S., Kim, H., ... & Mungall, C. J. (2023). Mappergpt: Large language models for linking and mapping entities. arXiv preprint arXiv:2310.03666.
+- Matthews, J., Love, P. E. D., Porter, S., & Fang, W. (2023). Curating a domain ontology for rework in construction: challenges and learnings from practice. Production Planning & Control. https://doi.org/10.1080/09537287.2023.2223566
 - Otero-Cerdeira, L., Rodríguez-Martínez, F. J., & Gómez-Rodríguez, A. (2015). Ontology matching: A literature review. Expert Systems with Applications, 42(2), 949-971.
+- Qiang, Z., Wang, W., & Taylor, K. (2025). Agent-OM: Leveraging LLM Agents for Ontology Matching. Proceedings of the VLDB Endowment, 18(1). https://doi.org/10.48550/arXiv.2312.00326
 - Tamayo, J., Doumi, L., Goel, S., Kovács-Ondrejkovic, O., & Sadun, R. (2023). Reskilling in the age of AI: Five new paradigms for leaders—and employees. _Harvard Business Review_, 101(5), 86–95. https://hbr.org/2023/09/reskilling-in-the-age-of-ai
 - Taylor, P. (2023, November 16). _Volume of data/information created, captured, copied, and consumed worldwide from 2010 to 2020, with forecasts from 2021 to 2025 (in zettabytes)_. Statista. https://www.statista.com/statistics/871513/worldwide-data-created/
 - Wang, S., Sun, X., Li, X., Ouyang, R., Wu, F., Zhang, T., Li, J., & Wang, G. (2023). GPT-NER: Named Entity Recognition via Large Language Models. arXiv preprint arXiv:2301.13294. https://arxiv.org/abs/2301.13294
