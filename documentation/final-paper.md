@@ -122,6 +122,8 @@ Each layer maintains bidirectional traceability and implements the model's mathe
 
 ### Implementation Considerations
 
+#### Theoretical Requirements
+
 The theoretical framework of CKM translates into specific technical requirements across three key areas: document processing, storage architecture, and integration requirements. Document processing encompasses context-aware lexeme identification, relationship detection within and across contexts, and validation against formal CKM rules. The storage architecture demands context-preserving schema design, efficient indexing for context-based retrieval, version control implementation, and change tracking across contexts.
 
 Integration requirements focus on four critical aspects:
@@ -131,7 +133,46 @@ Integration requirements focus on four critical aspects:
 - Cache management for efficient retrieval
 - Human-in-the-loop validation interfaces
 
-These implementation considerations directly informed the development of the proof-of-concept system described in the following section. While the theoretical model provides a robust framework for knowledge organization, the practical implementation revealed important insights about scaling LLM-based knowledge processing systems and managing complex document processing workloads.
+These theoretical considerations guided our architectural decisions in the proof-of-concept implementation described below.
+
+#### Proof-of-Concept Implementation
+
+The proof-of-concept implementation of CKM was built as a containerized microservices architecture, with the following key technical decisions:
+
+1. Infrastructure Design
+   - Docker-based containerization for all services
+   - NGINX reverse proxy for load balancing and routing
+   - Redis for queue management and caching
+   - MongoDB for persistent storage
+   - Scalable API instances (20 replicas) and worker nodes (4 replicas)
+
+2. Backend Architecture
+   - FastAPI framework for RESTful API endpoints
+   - Python RQ (Redis Queue) for distributed task processing
+   - Langfuse for LLM operation monitoring
+   - Resource management with container-level CPU/memory limits
+   - WebSocket support for real-time updates
+
+3. Frontend Implementation
+   - Next.js framework replacing initial Streamlit interface
+   - React components for interactive knowledge visualization
+   - Real-time updates via WebSocket connections
+   - Static asset optimization through NGINX
+
+4. Development Environment
+   - Jupyter Lab integration for interactive development
+   - RQ Dashboard for queue visualization
+   - Hot-reload capability for rapid iteration
+   - Comprehensive Python package management
+   - Automated setup and fixture loading
+
+5. Integration Patterns
+   - AWS Bedrock for Claude API access
+   - Structured prompts for knowledge extraction
+   - Context-aware processing pipeline
+   - Human-in-the-loop validation interfaces
+
+The implementation prioritizes scalability and maintainability while providing a robust foundation for the theoretical CKM framework. Container resource limits and service replication ensure reliable performance under load, while the monitoring and development tools support efficient system evolution and debugging.
 
 # III. Implementation of the Knowledge Processing Pipeline
 
