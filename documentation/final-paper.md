@@ -98,38 +98,38 @@ The Chelle Knowledge Model (CKM) is founded on five fundamental design principle
 
 ### Core Components
 
-The CKM implements its design principles through four primary components:
+The CKM implements its design principles through three integrated layers:
 
-1. Knowledge Representation Layer
+1. Knowledge Foundation Layer
 
-   - This foundational component structures knowledge into distinct categories: assets, assessments, and instructional frameworks. It maintains a clear separation between raw knowledge assets and their refined forms while supporting multiple representation formats and preserving semantic relationships.
+- Knowledge Representation: Manages raw assets, refined knowledge, and their relationships
+- Semantic Layer: Implements the complete relationship lattice and validation framework
+- Context Management: Handles organizational context, versioning, and knowledge evolution
 
-2. Context Management Framework
+2. Operational Layer
 
-   - In response to the exponential growth in organizational knowledge systems, this framework provides comprehensive context management capabilities. It handles context transitions, manages inheritance relationships, tracks dependencies across different knowledge domains, and implements version control for all context elements.
+- Implementation Framework: Transforms abstract concepts into concrete operational elements
+- Validation System: Ensures consistency between conceptual and operational components
+- Tools & Templates: Standardized patterns for knowledge implementation
 
-3. Integration Layer
+3. Instruction Layer
 
-   - Leverages advanced LLM-NLP techniques for knowledge processing
-   - Implements the ChatIE framework for zero-shot information extraction (Wei et al., 2024)
-   - Utilizes the SPIRES method for knowledge base population (Caufield et al., 2024)
-   - Incorporates MapperGPT approaches for entity linking (Matentzoglu et al., 2023)
+- Assessment Framework: Measures and validates understanding levels
+- Role Management: Handles mentor/learner interactions and authority designation
+- Learning Structure: Organizes knowledge into guides and learning paths
 
-4. Validation Framework
-   - Implements systematic quality checks across all processing stages
-   - Maintains audit trails for knowledge evolution
-   - Supports human-in-the-loop verification processes
-   - Ensures semantic consistency across context changes
+Each layer maintains bidirectional traceability and implements the model's mathematical formalism through computably verifiable constraints and validations.
 
 ### Implementation Considerations
 
 The theoretical framework of CKM translates into specific technical requirements across three key areas: document processing, storage architecture, and integration requirements. Document processing encompasses context-aware lexeme identification, relationship detection within and across contexts, and validation against formal CKM rules. The storage architecture demands context-preserving schema design, efficient indexing for context-based retrieval, version control implementation, and change tracking across contexts.
+
 Integration requirements focus on four critical aspects:
 
-API design for LLM interaction
-Worker load balancing for scalable processing
-Cache management for efficient retrieval
-Human-in-the-loop validation interfaces
+- API design for LLM interaction
+- Worker load balancing for scalable processing
+- Cache management for efficient retrieval
+- Human-in-the-loop validation interfaces
 
 These implementation considerations directly informed the development of the proof-of-concept system described in the following section. While the theoretical model provides a robust framework for knowledge organization, the practical implementation revealed important insights about scaling LLM-based knowledge processing systems and managing complex document processing workloads.
 
