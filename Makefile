@@ -51,7 +51,7 @@ paper:
 	pandoc -F mermaid-filter documentation/final-paper.md -o documentation/final-paper.pdf && open documentation/final-paper.pdf && open documentation/final-paper.pdf
 
 presentation:
-	pandoc -t beamer documentation/final-presentation.md -o documentation/final-presentation.pdf && open documentation/final-presentation.pdf && open documentation/final-presentation.pdf
+	pandoc -t beamer -F mermaid-filter documentation/final-presentation.md -o documentation/final-presentation.pdf && open documentation/final-presentation.pdf && open documentation/final-presentation.pdf
 
 DIRS ?= frontend/src
 FILES ?= # mongo-init.js docker-compose.yml nginx.conf frontend/next.config.ts

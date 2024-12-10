@@ -6,48 +6,54 @@ institution: "Georgia Institute of Technology"
 date: "December 8, 2024"
 ---
 
-**Abstract:** This paper presents the Chelle Knowledge Model (CKM), a novel framework for leveraging Large Language Models (LLMs) in organizational knowledge management. The research addresses critical challenges in maintaining knowledge currency, accessibility, and scalability through automated knowledge extraction and organization. We present a proof-of-concept implementation demonstrating the practical application of zero-shot information extraction techniques, context-aware knowledge processing, and human-in-the-loop validation. The implementation reveals that while significant technical challenges exist in scaling LLM-based knowledge management systems, these challenges are primarily engineering problems rather than fundamental limitations. Our findings suggest that automated ontology creation can transform organizational knowledge management by enabling rapid, iterative knowledge structuring and deployment.
+> **Abstract:** This paper demonstrates that while technical challenges exist in scaling LLM-based knowledge management systems, these challenges are primarily engineering problems rather than fundamental limitations. Through implementation of the Chelle Knowledge Model (CKM), we show that automated ontology creation can transform organizational knowledge management by enabling rapid, iterative knowledge structuring and deployment. Our proof-of-concept implementation validates the feasibility of zero-shot information extraction techniques and context-aware knowledge processing in organizational settings.
 
 _**Note:** The length of this paper is significantly longer than the 10-12 page limit, however, the bulk of this is the appendices and the Chelle Knowledge Model. The actual paper is about 12 pages._
 
 # I. Introduction
 
-Organizations face significant challenges in managing their institutional knowledge. Studies show that employees spend 19% of their time searching for and gathering information (Chui et al., 2012), while knowledge silos impair organizational decision-making processes (Deloitte, 2020). The volume of organizational data continues to grow exponentially (Taylor, 2023; Gartner, 2023), with information scattered across departments, systems, versions, and documents (Deloitte, 2020). These inefficiencies represent both operational and productivity costs.
+Organizations face substantial challenges in managing institutional knowledge. Studies show that employees spend 19% of their time searching for and gathering information (Chui et al., 2012), while knowledge silos impair organizational decision-making processes (Deloitte, 2020). The volume of organizational data continues to grow exponentially (Taylor, 2023; Gartner, 2023), with information scattered across departments, systems, versions, and documents (Deloitte, 2020). These inefficiencies represent both operational and productivity costs. Organizations must maintain knowledge currency in rapidly evolving fields (Tamayo et al., 2023). They must address departmental silos that prevent effective knowledge sharing (Cross et al., 2004). They must ensure consistent knowledge access across their workforce while managing domain-specific vocabulary and concepts (Otero et al., 2015). Traditional knowledge management approaches, based on manual curation and hierarchical structures, have limitations in addressing these needs (AIIM, 2023). Research indicates that knowledge management effectiveness decreases as organizational complexity increases, with larger enterprises reporting lower satisfaction rates with their systems (Heisig et al., 2016).
 
-The knowledge management challenge encompasses several key dimensions. First, organizations must maintain knowledge currency in rapidly evolving fields (Tamayo et al., 2023). Second, they must address departmental silos that prevent effective knowledge sharing (Cross et al., 2004). Third, they must ensure consistent knowledge access across their workforce while managing domain-specific vocabulary and concepts (Otero et al., 2015). Traditional knowledge management approaches, based on manual curation and hierarchical structures, have limitations in addressing these needs (AIIM, 2023). Research indicates that knowledge management effectiveness decreases as organizational complexity increases, with larger enterprises reporting lower satisfaction rates with their systems (Heisig et al., 2016).
+These organizational challenges motivated our research into potential solutions, focusing on the intersection of Large Language Models (LLMs) and ontology management. While LLMs present opportunities for knowledge extraction and ontology development (Babaei Giglou et al., 2023), existing approaches lacked frameworks for organizational deployment. Our research revealed three fundamental knowledge processing operations essential for effective organizational knowledge management: 1) **entity extraction**, 2) **relationship extraction**, and 3) **ontological mapping**. Implementing these operations required addressing several technical challenges, including context limitations, potential hallucination issues (Bikeyev, 2023; Wang et al., 2023), worker load balancing, API management, and system scalability. These operations and their associated challenges emerged as the core considerations for automated knowledge structuring at scale.
 
-The emergence of Large Language Models (LLMs) presents new opportunities for addressing these organizational knowledge management challenges. Recent research demonstrates that LLMs can significantly enhance knowledge extraction and ontology development processes (Babaei Giglou et al., 2023). However, effective implementation requires addressing several technical challenges, including context limitations and potential hallucination issues (Bikeyev, 2023; Wang et al., 2023).
+## Problem Statement
 
-This paper presents the Chelle Knowledge Model (CKM), a novel approach to organizational knowledge management that leverages LLMs for automated knowledge extraction and organization, along with a proof-of-concept implementation demonstrating its practical application. The CKM specifically addresses the challenges of knowledge currency, accessibility, and scalability through a structured approach to knowledge processing and organization. The CKM serves as a constitutional framework defining our application's approach to knowledge management. While databases and notebooks have become standard engineering tools, ontologies remain primarily in research domains. CKM represents an opinionated approach to making ontologies more accessible and practical for organizational knowledge management, providing a formal system for automating ontology creation and maintenance.
+The objective of this work can be formally stated as follows:
 
-The CKM framework integrates three core components for knowledge processing: entity extraction, relation extraction, and ontology mapping. This approach builds on recent advances in zero-shot learning for knowledge base population (Caufield et al., 2024) and entity mapping (Matentzoglu et al., 2023). The system employs a human-in-the-loop validation approach to ensure accuracy and build trust in automated knowledge extraction processes.
+\begin{quote}
+\textbf{Given:} A corpus of organizational documents $\Omega = \{d_1, \ldots, d_n\}$
 
-The core architecture of CKM comprises:
+\textbf{Goal:} Extract and formalize the latent knowledge $\mathcal{K}_{\ell}(\Omega)$ into a structured ontology $\mathcal{O}$
 
-1. A Knowledge Extractor Application that processes unstructured textual data
-2. Document Processing Models that handle entity extraction, relation extraction, and ontology mapping
-3. An integration layer that connects these components while maintaining semantic consistency
-4. A validation framework that ensures extracted knowledge accuracy
+\begin{equation}
+f: \Omega \xrightarrow{\text{extraction}} \mathcal{K}_{\ell}(\Omega) \xrightarrow{\text{formalization}} \mathcal{O}
+\end{equation}
 
-This approach differs from traditional knowledge management systems in several key aspects. First, it employs zero-shot information extraction techniques (Wei et al., 2024) to reduce manual curation requirements. Second, it maintains explicit context tracking and versioning to preserve semantic integrity across different organizational contexts. Third, it implements formal relationship modeling that allows for flexible knowledge evolution while maintaining consistency. The accompanying proof-of-concept implementation demonstrates the practical feasibility of these concepts.
+where:
+\begin{itemize}
+\item $\mathcal{K}_{\ell}(\Omega)$ represents the latent knowledge embedded within $\Omega$
+\item $\mathcal{O} = (C, R, A)$ is a formal ontology consisting of:
+\begin{itemize}
+\item $C$: Set of concepts
+\item $R$: Set of relations between concepts
+\item $A$: Set of axioms governing the ontology
+\end{itemize}
+\end{itemize}
+\end{quote}
 
-### Contributions
+## Contributions
 
-The contributions of this work include:
+Toward the solution of this problem we developed the **Chelle Knowledge Model (CKM)**, a formal description of knowledge extracted from a corpus. It is accompanied by a proof-of-concept application [[link]](https://github.com/joshuacook/gatech-edtech-final-project). The CKM specifically addresses the challenges of knowledge currency, accessibility, and scalability through a structured approach to knowledge processing and organization. The CKM serves as a fundamental framework defining our application's approach to knowledge management. Ontologies have historically been the province of research institutions. The CKM represents an opinionated approach to making ontologies more accessible and practical for everyday organizational knowledge management. With its formalism, we can get down to the task of automating the creation of everyday ontologies.
 
-1. A novel framework for structuring LLM interactions in knowledge management that specifically addresses organizational challenges. The CKM approach demonstrates how LLMs can be effectively integrated into existing knowledge management processes while maintaining semantic consistency and supporting natural knowledge evolution (Matentzoglu et al., 2023).
+The model is built around the three fundamental operations that work in sequence:
 
-2. A proof-of-concept implementation that validates the feasibility of automated knowledge extraction and organization using LLMs. The implementation demonstrates practical solutions to challenges in scaling LLM-based knowledge processing systems, particularly in handling complex document processing workloads and managing worker load balancing.
+- **Entity extraction** from organizational documents
+- **Relationship extraction** between identified entities
+- **Ontological mapping** to build a comprehensive knowledge structure
 
-3. Practical insights into the challenges and solutions for LLM-based knowledge processing in organizational contexts. While existing research has focused on theoretical approaches to knowledge extraction (Caufield et al., 2024), this work provides concrete implementation strategies and identifies specific engineering considerations for deploying such systems at scale.
+This framework builds on recent advances in zero-shot learning for knowledge base population (Caufield et al., 2024) and entity mapping (Matentzoglu et al., 2023).
 
-4. A framework for context-aware knowledge extraction that preserves semantic relationships across different organizational contexts. This extends current approaches to ontology learning (Babaei Giglou et al., 2023) by incorporating explicit context management and relationship modeling.
-
-5. Architectural patterns for building scalable knowledge processing systems that integrate LLMs with traditional knowledge management approaches. These patterns address practical concerns such as worker load balancing, API management, and system scalability while maintaining semantic consistency in knowledge extraction and organization.
-
-The research and implementation demonstrate that while significant technical challenges exist in scaling LLM-based knowledge management systems, these challenges are primarily engineering problems rather than fundamental limitations of the approach. The successful implementation of core functionality supports the viability of using LLMs to transform organizational knowledge management through automated extraction and organization processes.
-
-The remainder of this paper is organized as follows: Section II presents the Chelle Knowledge Model (CKM) in detail, including its design principles and core components. Section III describes the knowledge processing pipeline implementation and technical architecture. Section V discusses implementation progress, challenges, and implications for future work. Finally, Section VI concludes with an analysis of the transformative potential of automated ontology creation in organizational knowledge management.
+The research and implementation demonstrate that while technical challenges exist in scaling LLM-based knowledge management systems, these challenges are primarily engineering problems rather than fundamental limitations of the approach. The successful implementation of core functionality supports the viability of using LLMs to transform organizational knowledge management through automated extraction and organization processes. The remainder of this paper explores this transformation in detail: Section II presents the Chelle Knowledge Model (CKM), including its design principles and core components. Section III describes the knowledge processing pipeline implementation and technical architecture. Section IV discusses implementation progress, challenges, and implications for future work. Finally, Section V concludes with an analysis of the transformative potential of automated ontology creation in organizational knowledge management.
 
 # II. The Chelle Knowledge Model (CKM)
 
@@ -69,102 +75,116 @@ The Chelle Knowledge Model (CKM) is founded on five fundamental design principle
 
 ### Core Components
 
-The CKM implements its design principles through three integrated layers:
+The CKM architecture is structured in three interconnected layers, as shown in Figure 1. This diagram represents the complete transformation of organizational knowledge from initial concepts to operational implementation.
 
-1. **Knowledge Foundation Layer**
+![](documentation/knowledge-model.png)
 
-- Knowledge Representation: Manages raw assets, refined knowledge, and their relationships
-- Semantic Layer: Implements the complete relationship lattice and validation framework
-- Context Management: Handles organizational context, versioning, and knowledge evolution
+\begin{figure}[h]
+\caption{The Chelle Knowledge Model (CKM)}
+\end{figure}
 
-2. **Operational Layer**
+The three layers work in concert to process and structure organizational knowledge:
 
-- Implementation Framework: Transforms abstract concepts into concrete operational elements
-- Validation System: Ensures consistency between conceptual and operational components
-- Tools & Templates: Standardized patterns for knowledge implementation
+1. **Conceptual Layer**
+   - Begins with lexeme identification and concept formation
+   - Establishes concept definitions and validations
+   - Manages knowledge progression through refinement stages
+   - Forms the foundation for all knowledge representation
 
-3. **Instruction Layer**
+2. **Relationship Layer**
+   - Implements a formal classification system for concept relationships
+   - Processes relationships through defined types (equivalence to none)
+   - Maintains semantic consistency across concept connections
+   - Ensures relationship validity and strength calculations
 
-- Assessment Framework: Measures and validates understanding levels
-- Role Management: Handles mentor/learner interactions and authority designation
-- Learning Structure: Organizes knowledge into guides and learning paths
+3. **Operational Layer**
+   - Transforms abstract concepts into concrete implementations
+   - Provides templates and tools for knowledge operationalization
+   - Implements cross-reference and validation phases
+   - Ensures practical applicability of theoretical knowledge
 
-Each layer maintains bidirectional traceability and implements the model's mathematical formalism through computably verifiable constraints and validations.
+### From Theory to Practice
 
-### Implementation Considerations
+The CKM's theoretical framework, with its three-layer architecture and formal design principles, necessitates a carefully structured technical implementation. The transition from theoretical model to operational system requires addressing complex requirements that span all layers of the architecture.
 
-**Theoretical Requirements** The theoretical framework of CKM translates into specific technical requirements across three key areas: document processing, storage architecture, and integration requirements. Document processing encompasses context-aware lexeme\footnote{A lexeme is defined in CKM as 'a unit of meaning in a language, consisting of a word or group of words.'} identification, relationship detection within and across contexts, and validation against formal CKM rules. The storage architecture demands context-preserving schema design, efficient indexing for context-based retrieval, version control implementation, and change tracking across contexts.
+#### Theoretical Requirements
 
-Integration requirements focus on four critical aspects:
+The implementation of CKM demands technical solutions across three critical areas, each of which intersects with all layers of the model:
 
-- API design for LLM interaction
-- Worker load balancing for scalable processing
-- Human-in-the-loop validation interfaces
+1. Document Processing requirements address how the system ingests and processes organizational knowledge:
+   - Context-aware lexeme\footnote{A lexeme is defined in CKM as 'a unit of meaning in a language, consisting of a word or group of words.'} identification and extraction
+   - Relationship detection between concepts within and across documents
+   - Validation of extracted knowledge against CKM rules
+   - Preservation of semantic meaning throughout processing
+   - Transformation of raw content into operational knowledge
 
-These theoretical considerations guided our architectural decisions in the proof-of-concept implementation described below.
+2. Storage Architecture requirements define how the system maintains and manages knowledge:
+   - Schema design supporting all three CKM layers simultaneously
+   - Version control and change tracking across the entire knowledge hierarchy
+   - Efficient indexing for multi-dimensional knowledge retrieval
+   - Context preservation across organizational boundaries
+   - Support for evolving knowledge structures and relationships
 
-**Proof-of-Concept Implementation** The proof-of-concept implementation of CKM was built as a containerized microservices architecture, with the following key technical decisions:
+3. Integration Requirements specify how system components interact:
+   - Coordinated LLM processing across conceptual, relationship, and operational layers
+   - Distributed worker architecture for scalable processing
+   - Human validation interfaces at all levels of knowledge processing
+   - Cross-reference and validation mechanisms spanning the entire model
 
-1. **Infrastructure Design**
+#### Proof-of-Concept Implementation
 
-   - Docker-based containerization for all services
-   - NGINX reverse proxy for load balancing and routing
-   - Redis for queue management and caching
-   - MongoDB for persistent storage
-   - Scalable API instances (20 replicas) and worker nodes (4 replicas)
+1. **Core Infrastructure**
+   - Docker-based containerization enabling modular service deployment
+   - NGINX reverse proxy managing request routing and load distribution
+   - Redis providing distributed queue management and caching
+   - MongoDB offering flexible document storage with versioning
+   - Horizontal scaling with 20 API replicas and 4 worker nodes
 
-2. **Backend Architecture**
+2. **Processing Pipeline**
+   - FastAPI framework implementing RESTful endpoints for knowledge operations
+   - Python RQ managing distributed task processing across layers
+   - Langfuse providing comprehensive LLM operation monitoring
+   - Specialized processor classes handling context-aware operations:
+     - Lexeme identification and extraction
+     - Relationship detection via structured prompts
+     - Validation chains enforcing CKM rules
+     - Document versioning and state tracking
 
-   - FastAPI framework for RESTful API endpoints
-   - Python RQ (Redis Queue) for distributed task processing
-   - Langfuse for LLM operation monitoring
+3. **Knowledge Management**
+   - MongoDB schema supporting multi-layered knowledge representation
+   - Metadata enrichment maintaining contextual relationships
+   - Immutable document patterns enabling reliable version control
+   - Flexible indexing supporting cross-cutting queries
+   - State tracking across processing stages
 
-3. **Frontend Implementation**
+4. **Integration Framework**
+   - AWS Bedrock integration for Claude API access
+   - Structured prompt templates managing LLM interactions
+   - Redis Queue coordinating distributed processing
+   - Next.js frontend enabling:
+     - Human-in-the-loop validation interfaces
+     - Interactive knowledge exploration
+     - Real-time processing feedback
 
-   - Next.js framework replacing initial Streamlit interface
+5. **Development Support**
+   - Jupyter Lab providing interactive development environment
+   - RQ Dashboard offering queue visualization and monitoring
+   - Hot-reload capability enabling rapid iteration
+   - Comprehensive logging across all system components
 
-4. **Development Environment**
-
-   - Jupyter Lab integration for interactive development
-   - RQ Dashboard for queue visualization
-   - Hot-reload capability for rapid iteration
-
-5. **Integration Patterns**
-
-   - AWS Bedrock for Claude API access
-   - Structured prompts for knowledge extraction
-   - Context-aware processing pipeline
-   - Human-in-the-loop validation interfaces
-
-The implementation directly addresses the theoretical requirements through several key architectural decisions:
-
-1. **Document Processing Requirements**
-
-   - Context-aware lexeme identification implemented via specialized processor classes
-   - Relationship detection handled through structured prompts and validation chains
-   - CKM rule validation enforced through typed model constraints
-   - Processing state tracking via MongoDB document versioning
-
-2. **Storage Architecture Requirements**
-
-   - Context preservation achieved through metadata enrichment and version control
-   - Version control managed through immutable document patterns
-
-3. **Integration Requirements**
-
-   - LLM interaction managed through structured prompt templates and validation chains
-   - Worker load balancing achieved via Redis Queue with 4 worker nodes
-   - Human validation interfaces built into the Next.js frontend components
-
-This architecture demonstrates that the theoretical CKM framework can be practically implemented, though scaling challenges remain around concurrent processing and validation chain performance.
+The efficacy of this architecture will be discussed in Section IV.
 
 # III. Implementation of the Knowledge Processing Pipeline
 
-The proof-of-concept implementation focused on establishing core functionality for automated knowledge extraction and concept formation using Large Language Models. The current implementation demonstrates basic pipeline functionality while revealing important technical challenges that inform future development. All code is available on GitHub [[link]](https://github.com/joshuacook/gatech-edtech-final-project).
+Our implementation of the CKM is structured around the model's three-layer architecture:
+
+- A **Conceptual Layer** implementation for lexeme identification and concept formation
+- A **Relationship Layer** implementation for managing the relationship hierarchy and validation
+- An **Operational Layer** implementation for transforming abstract concepts into concrete knowledge entities
 
 ### Architecture Overview
 
-The system implementation follows a processor-based architecture, with distinct components handling specific aspects of document analysis and knowledge extraction. The core processors are organized in a hierarchical structure:
+The system implementation translates these architectural components into a processor-based design, with distinct components handling specific aspects of document analysis and knowledge extraction. The core processors are organized in a hierarchical structure:
 
 ```
 api/processors/assets/
@@ -182,7 +202,7 @@ Each processor implements a specific stage in the knowledge extraction pipeline,
 
 ### Document Processing Pipeline
 
-The current implementation demonstrates basic pipeline functionality (See Appendix I for a detailed example of document processing flow).
+Appendix I describes a detailed example of document processing flow.
 
 #### Document Classification and Metadata Extraction
 
@@ -276,28 +296,30 @@ This monitoring infrastructure has proved invaluable for both development iterat
 
 ![An Example Langfuse Trace](documentation/lf-asset-processing-trace.png)
 
-### Current State and Limitations
-
-The current implementation successfully demonstrates core functionality while revealing important insights about scaling LLM-based knowledge processing systems. Key limitations include:
-
-- Sequential processing constraints for citation extraction
-- Processing time scaling issues with complex documents
-- Debug complexity in asynchronous operations
-
-These limitations, while significant, represent engineering challenges rather than fundamental conceptual flaws in the approach.
+I'll help you merge those sections into a cohesive opening for Section IV. Here's how I would combine them:
 
 # IV. Discussion
 
-The implementation of the knowledge processing pipeline demonstrated both promising results and revealed important technical challenges that impact system scalability. While core functionality was successfully implemented and performed well, several key insights emerged during development.
+The implementation of the knowledge processing pipeline demonstrated both promising results and revealed technical challenges that impact system scalability. Core functionality was successfully implemented. But limitations emerged. We had issues with sequential processing of documents, especially when they grew to be more complex. It was also difficult to debug code in asynchronous operations i.e. the `rq` delayed job system. In my opinion, these are engineering challenges rather than a conceptual flaws in the approach.
 
 ### Implementation Progress and Challenges
 
-The core system functionality was successfully implemented and demonstrated effective performance. However, a significant scalability challenge emerged when processing rich documents containing numerous concepts (>25 lexemes), leading to performance degradation. This bottleneck led to exploring two distinct solution paths:
+When processing rich documents containing numerous concepts (>25 lexemes) we saw performance degradation. This bottleneck led to exploring two distinct solution paths:
 
 1. Initial attempts focused on load balancing the API server to better utilize system resources
 2. Subsequently, attention shifted to worker load balancing, which proved to be the correct approach but required substantial code refactoring
 
-Notably, the troubleshooting process led to the discovery and integration of Langfuse, a monitoring and observability solution for LLM applications. This addition to the technology stack emerged as a silver lining of the scalability challenges, providing valuable insights into LLM operation and performance that will benefit future development iterations.
+### Scope Management Insights
+
+A key learning was the importance of careful scope management in research projects. While the theoretical framework of the CKM was well-developed and remains sound, the implementation would have benefited from a more targeted initial approach focusing on:
+
+1. Small, representative document samples rather than full-scale processing
+2. Core functionality demonstration over scalability optimization
+3. Complete implementation of basic features before addressing performance challenges
+
+Starting with minimal viable examples can provide faster validation of core concepts while avoiding premature optimization challenges. 
+
+In terms of completed components, the following table summarizes the status of each component:
 
 | Component                                       | Status      |
 | ----------------------------------------------- | ----------- |
@@ -316,19 +338,13 @@ Notably, the troubleshooting process led to the discovery and integration of Lan
 | Learning structure implementation               | Theoretical |
 | Mentions system                                 | Theoretical |
 
-### Scope Management Insights
-
-A key learning from this implementation process was the importance of careful scope management in research projects. While the theoretical framework of the CKM was well-developed and remains sound, the implementation would have benefited from a more targeted initial approach focusing on:
-
-1. Small, representative document samples rather than full-scale processing
-2. Core functionality demonstration over scalability optimization
-3. Complete implementation of basic features before addressing performance challenges
-
-This experience provides valuable insight for similar projects in the field: when implementing complex theoretical frameworks, starting with minimal viable examples can provide faster validation of core concepts while avoiding premature optimization challenges. The integration of Langfuse during troubleshooting demonstrates how technical challenges can lead to unexpected improvements in system architecture.
+\begin{table}[h]
+\caption{Implementation Status of System Components}
+\end{table}
 
 ### Preliminary Results
 
-Initial results from concept extraction and definition were promising, based on ad hoc analysis of system logs. The LLM-based approach demonstrated effectiveness in identifying and defining concepts from input documents. However, it should be noted that due to development focusing on core functionality, the system's output capture mechanisms were not implemented in a way that would support rigorous research validation and presentation.
+Initial results from concept extraction and definition were promising, based on ad hoc analysis of system logs. The LLM-based approach demonstrated effectiveness in identifying and defining concepts from input documents. It should be noted that due to development focusing on core functionality, the system's output capture mechanisms were not implemented in a way that would support rigorous research validation and presentation.
 
 ### Time Constraints and Future Work
 
@@ -366,19 +382,22 @@ Two critical areas require attention for advancing this work:
 
 The successful implementation of core functionality, despite various technical challenges, supports the fundamental viability of using LLMs to transform knowledge management through rapid ontology creation and deployment. While significant work remains, particularly in validation and scaling, the potential to fundamentally change how organizations approach knowledge structuring and management appears promising.
 
+\pagebreak
 # Appendix
 
-## Example: Technical Document Processing Flow
+## Appendix A: Example -- Technical Document Processing Flow
 
 ### Input Document
 
 ```
 Title: Best Practices for API Security
 Section 1: Authentication
-OAuth2 is the recommended protocol for API authentication. It provides secure delegated access through token-based authorization.
+OAuth2 is the recommended protocol for API authentication. It provides secure 
+delegated access through token-based authorization.
 
 Section 2: Rate Limiting
-Implement rate limiting to prevent API abuse. Consider using token bucket algorithms for flexible rate control.
+Implement rate limiting to prevent API abuse. Consider using token bucket algorithms 
+for flexible rate control.
 ```
 
 ### Processing Pipeline Steps
@@ -434,7 +453,8 @@ Example concept generated:
 }
 ```
 
-## References
+\pagebreak
+## Appendix B: References
 
 - Association for Intelligent Information Management (AIIM). (2023, April 20). _2023 State of the Intelligent Information Management Industry_. AIIM. https://www.aiim.org/industrywatch2023
 - Babaei Giglou, H., D’Souza, J., & Auer, S. (2023, October). LLMs4OL: Large language models for ontology learning. In International Semantic Web Conference (pp. 408-427). Cham: Springer Nature Switzerland.
@@ -445,7 +465,7 @@ Example concept generated:
 - Deloitte. (2020). _2020 Deloitte Global Human Capital Trends: The social enterprise at work: Paradox as a path forward_. Deloitte Development LLC. https://www2.deloitte.com/content/dam/Deloitte/us/Documents/human-capital/us-2020-deloitte-global-human-capital-trends.pdf
 - Gartner, Inc. (2023, May 10). _Gartner survey reveals 47% of digital workers struggle to find the information needed to effectively perform their jobs_. https://www.gartner.com/en/newsroom/press-releases/2023-05-10-gartner-survey-reveals-47-percent-of-digital-workers-struggle-to-find-the-information-needed-to-effectively-perform-their-jobs
 - Heisig, P., Suraj, O. A., Kianto, A., Kemboi, C., Perez Arrau, G., & Fathi Easa, N. (2016). Knowledge management and business performance: global experts’ views on future research needs. Journal of Knowledge Management, 20(6), 1169-1198.
-- Jackson, R., Matentzoglu, N., Overton, J. A., Vita, R., Balhoﬀ, J. P., Buttigieg, P. L., ... &Peters, B. (2021). OBO Foundry in 2021: operationalizing open data principles to evaluate ontologies. Database, 2021, baab069.
+- Jackson, R., Matentzoglu, N., Overton, J. A., Vita, R., Balhoff, J. P., Buttigieg, P. L., ... &Peters, B. (2021). OBO Foundry in 2021: operationalizing open data principles to evaluate ontologies. Database, 2021, baab069.
 - Jonquet, C., & Grau, N. (2024). M4. 4-Review of Semantic Artefact Catalogues and guidelines for serving FAIR semantic artefacts in EOSC.
 - Matentzoglu, N., Caufield, J. H., Hegde, H. B., Reese, J. T., Moxon, S., Kim, H., ... & Mungall, C. J. (2023). Mappergpt: Large language models for linking and mapping entities. arXiv preprint arXiv:2310.03666.
 - Matthews, J., Love, P. E. D., Porter, S., & Fang, W. (2023). Curating a domain ontology for rework in construction: challenges and learnings from practice. Production Planning & Control. https://doi.org/10.1080/09537287.2023.2223566
@@ -457,7 +477,8 @@ Example concept generated:
 - Wei, X., Cui, X., Cheng, N., Wang, X., Zhang, X., Huang, S., Xie, P., Xu, J., Chen, Y.,
 - Zhang, M., Jiang, Y., & Han, W. (2024). ChatIE: Zero-Shot Information Extraction via Chatting with ChatGPT. Retrieved from https://arxiv.org/abs/2302.10205
 
-## Chelle Knowledge Model
+\pagebreak
+## Appendix C: Chelle Knowledge Model
 
 ### Purpose
 

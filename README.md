@@ -68,8 +68,10 @@ docker-compose up --build
 ```
 
 3. Access the application:
-   - Frontend: http://localhost:8501
+   - Frontend: http://localhost:3000
    - API: http://localhost:8000
+   - Worker Monitor: http://localhost:9181
+   - Jupyter Lab: http://localhost:8888
 
 ## System Architecture
 
